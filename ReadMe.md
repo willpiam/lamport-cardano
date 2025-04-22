@@ -54,6 +54,19 @@ With strength set to 63
 
 The actual verification of the Lamport signature happens during the *unlock* step.
 
+## Questions
+
+### Making an account
+
+How can we prevent replay attacks in a Lamport signature scheme where the message being signed needs to uniquely identify the transaction, but the signature itself (stored in the redeemer) affects the transaction hash?
+
+### Verification Over Many Transactions
+
+Is there some way in which I can verify a lamport signature over multiple transactions?
+
+
+
+
 ## Related Work
 
 | Title                               | Reference                             |
