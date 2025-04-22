@@ -1,0 +1,126 @@
+{
+  "preamble": {
+    "title": "wildoy/lamport-validator",
+    "description": "Aiken contracts for project 'wildoy/lamport-validator'",
+    "version": "0.0.0",
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.15+f03633e"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "lamport.lamport.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/lamport~1LamportDatum"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/lamport~1LamportRedeemer"
+        }
+      },
+      "parameters": [
+        {
+          "title": "_version",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "strength",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        }
+      ],
+      "compiledCode": "5902ab0101002229800aba2aba1aba0aab9faab9eaab9dab9a9bad0039bad00248888888896600264653001300a00198051805800cc0280092225980099b8748008c024dd500144ca6002601c003300e300f0019b874800122259800980098069baa00789919912cc004c054006264660020026eb0c0540088966002003159800980318091baa0078994c004c0040064603060320033017301437540109112cc004cdc398019bac30023017375402002715980099b87300337586034602e6ea800404e2b30013370e60066eb0c008c05cdd5000809c56600266e3cdd7180d180d980d980b9baa001375c6034602e6ea8042330012232598009800a40211598009800a4001148002266e392210801020408102040800000240611598009800a40811337049040021980180199b800024803e266e092080808080203300300333700004901fa03040606e20006444b30010028a60103d87a80008acc004c034006266e9520003301c301d0024bd70466002007301e00299b80001480050032030406d37246eb8c068c05cdd50084dd61801180b9baa01048888cc88c8cc0040052000225980099b8700101b8a518992cc004c04cc07cdd5000c4c966002602860406ea80062b30013371e6eb8c090c084dd50011b92375c604860426ea800626600800866e0000d20028a50407d16407c6600800c005164078b30013372291010180003371666e18cdc119b8e006337060029008180219b8600148041208004489008998019bac300a301f375401200313300337586044603e6ea802400501d203a300400430030034528202a8a50405514a080aa294101508966002003148002266e0120023300200230190014059164045132330030033018002375c602c00280a22c8090dd71809000980980098071baa0078b201818051baa0028b2010180500098029baa00a8a4d13656400c1",
+      "hash": "b7c00de9186ca8760895d2a376ce3e3b856bbd2a7b354a2729dd3fc4"
+    },
+    {
+      "title": "lamport.lamport.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "parameters": [
+        {
+          "title": "_version",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        },
+        {
+          "title": "strength",
+          "schema": {
+            "$ref": "#/definitions/Int"
+          }
+        }
+      ],
+      "compiledCode": "5902ab0101002229800aba2aba1aba0aab9faab9eaab9dab9a9bad0039bad00248888888896600264653001300a00198051805800cc0280092225980099b8748008c024dd500144ca6002601c003300e300f0019b874800122259800980098069baa00789919912cc004c054006264660020026eb0c0540088966002003159800980318091baa0078994c004c0040064603060320033017301437540109112cc004cdc398019bac30023017375402002715980099b87300337586034602e6ea800404e2b30013370e60066eb0c008c05cdd5000809c56600266e3cdd7180d180d980d980b9baa001375c6034602e6ea8042330012232598009800a40211598009800a4001148002266e392210801020408102040800000240611598009800a40811337049040021980180199b800024803e266e092080808080203300300333700004901fa03040606e20006444b30010028a60103d87a80008acc004c034006266e9520003301c301d0024bd70466002007301e00299b80001480050032030406d37246eb8c068c05cdd50084dd61801180b9baa01048888cc88c8cc0040052000225980099b8700101b8a518992cc004c04cc07cdd5000c4c966002602860406ea80062b30013371e6eb8c090c084dd50011b92375c604860426ea800626600800866e0000d20028a50407d16407c6600800c005164078b30013372291010180003371666e18cdc119b8e006337060029008180219b8600148041208004489008998019bac300a301f375401200313300337586044603e6ea802400501d203a300400430030034528202a8a50405514a080aa294101508966002003148002266e0120023300200230190014059164045132330030033018002375c602c00280a22c8090dd71809000980980098071baa0078b201818051baa0028b2010180500098029baa00a8a4d13656400c1",
+      "hash": "b7c00de9186ca8760895d2a376ce3e3b856bbd2a7b354a2729dd3fc4"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Int": {
+      "dataType": "integer"
+    },
+    "List$ByteArray": {
+      "dataType": "list",
+      "items": {
+        "$ref": "#/definitions/ByteArray"
+      }
+    },
+    "lamport/LamportDatum": {
+      "title": "LamportDatum",
+      "anyOf": [
+        {
+          "title": "LamportDatum",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "pk_left",
+              "$ref": "#/definitions/List$ByteArray"
+            },
+            {
+              "title": "pk_right",
+              "$ref": "#/definitions/List$ByteArray"
+            },
+            {
+              "title": "message",
+              "$ref": "#/definitions/ByteArray"
+            }
+          ]
+        }
+      ]
+    },
+    "lamport/LamportRedeemer": {
+      "title": "LamportRedeemer",
+      "anyOf": [
+        {
+          "title": "LamportRedeemer",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "message",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "signature",
+              "$ref": "#/definitions/List$ByteArray"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

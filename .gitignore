@@ -1,0 +1,4 @@
+.env
+test-accounts.json
+txHashes.json
+lamportPersistence/
