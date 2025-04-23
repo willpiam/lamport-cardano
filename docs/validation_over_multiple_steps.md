@@ -4,7 +4,7 @@
 
 Let eight non‑fungible tokens (NFTs), each linked to a distinct one‑eighth fragment of a public key, reside in eight separate UTxOs. To spend any given token, the user must supply the corresponding one‑eighth fragment of the signature; executing this step produces a successor UTxO that retains the NFT and carries a datum containing that fragment of the message hash.
 
-In a final, ninth transaction, these eight UTxOs are consumed as inputs. Their datums are concatenated to reconstruct the complete message hash, at which point the protocol—now wielding the full cryptographic strength of the original key—confirms that the hash was indeed signed. If this reconstructed hash satisfies a predefined validation condition (for example, if its preimage accurately encodes the transaction’s inputs and outputs), the transaction is deemed valid and is committed to the chain.
+In a final, ninth transaction, these eight UTxOs are consumed as inputs. Their datums are concatenated to reconstruct the complete message hash, at which point the protocol—now wielding the full cryptographic strength of the original key—confirms that the hash was indeed signed. If this reconstructed hash satisfies a predefined validation condition (for example, if its preimage accurately encodes the transaction's inputs and outputs), the transaction is deemed valid and is committed to the chain.
 
 
 ```mermaid
@@ -46,7 +46,7 @@ In the first transaction, mint all eight NFTs into a single UTxO guarded by a di
 ### Iterative Fragment Extraction
 To deploy an individual key public key fragment, spend the relevant NFT from the distribution UTxO and lock it with the corisponding public key fragment in the datum. The validator enforces that the key chunck is the leaf at the expected position in the merkle tree. 
 
-~~The validator checks the NFT against the stored Merkle root, then outputs a new UTxO locked by the fragment‑revealing script. This new UTxO’s datum must contain exactly the public‑key fragment corresponding to the NFT’s index.~~
+~~The validator checks the NFT against the stored Merkle root, then outputs a new UTxO locked by the fragment‑revealing script. This new UTxO's datum must contain exactly the public‑key fragment corresponding to the NFT's index.~~
 
 ### Final Configuration
 Repeating the fragment‑extraction step for each of the eight NFTs yields eight distinct UTxOs, each holding one NFT and its matching key fragment in a datum. At this point, the user needs to know what to sign and we consider the system to be initalized. 
@@ -54,8 +54,11 @@ Repeating the fragment‑extraction step for each of the eight NFTs yields eight
 
 ```mermaid
 flowchart TD
+    %% Minting transaction
+    M[Mint Tx: Create 8 NFTs] --> D1[Distribution UTxO: All 8 NFTs + Merkle Root]
+
     %% Initial state
-    D1[Distribution UTxO: All 8 NFTs + Merkle Root] -->|Extract NFT1| T1[Tx1]
+    D1 -->|Extract NFT1| T1[Tx1]
     T1 --> D2[Distribution UTxO: 7 NFTs + Merkle Root]
     T1 --> F1[Fragment UTxO: NFT1 + PKFrag1]
 
