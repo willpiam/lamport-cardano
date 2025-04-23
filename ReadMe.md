@@ -22,6 +22,10 @@ aiken build
 ```
 Please note that if you have `plutus.json` in the `lamport-validator` folder the smart contract is already compiled. 
 
+### Running
+
+    deno task run:emulator
+
 ## Available Tasks
 
 - `deno task dev` - Run the project in watch mode
@@ -59,6 +63,8 @@ The actual verification of the Lamport signature happens during the *unlock* ste
 ### Making an account
 
 How can we prevent replay attacks in a Lamport signature scheme where the message being signed needs to uniquely identify the transaction, but the signature itself (stored in the redeemer) affects the transaction hash?
+
+In other words if I sign to spend from my Lamport validator but never submit the transaction on-chain and instead give you the signature, how can I be sure that the only thing you can do with it is use it to spend my utxo exactly as I intended to spend it. 
 
 ### Verification Over Many Transactions
 
