@@ -62,15 +62,18 @@ The actual verification of the Lamport signature happens during the *unlock* ste
 
 ### Making an account
 
+*The Transaction Malleability Problem*
+
 How can we prevent replay attacks in a Lamport signature scheme where the message being signed needs to uniquely identify the transaction, but the signature itself (stored in the redeemer) affects the transaction hash?
 
 In other words if I sign to spend from my Lamport validator but never submit the transaction on-chain and instead give you the signature, how can I be sure that the only thing you can do with it is use it to spend my utxo exactly as I intended to spend it. 
+
 
 ### Verification Over Many Transactions
 
 Is there some way in which I can verify a lamport signature over multiple transactions?
 
-
+*see `docs/validation_over_multiple_steps.md` for an outline of an approch to this problem*
 
 
 ## Related Work
