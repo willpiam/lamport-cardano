@@ -9,26 +9,25 @@ In a final, ninth transaction, these eight UTxOs are consumed as inputs. Their d
 
 ```mermaid
 flowchart LR
-    %% Initial UTxOs with 4 NFTs and key fragments
-    A1[UTxO A1: NFT1 + PKFrag1] -->|SigFrag1| T1[Tx1]
+    %% Initial UTxOs with 3 NFTs and key fragments
+    A1[UTxO A1: NFT1 + PKFrag1]:::nft1 -->|SigFrag1| T1[Tx1]
     T1 --> A2[UTxO A2: NFT1 + Datum1]
 
-    B1[UTxO B1: NFT2 + PKFrag2] -->|SigFrag2| T2[Tx2]
+    B1[UTxO B1: NFT2 + PKFrag2]:::nft2 -->|SigFrag2| T2[Tx2]
     T2 --> B2[UTxO B2: NFT2 + Datum2]
 
-    C1[UTxO C1: NFT3 + PKFrag3] -->|SigFrag3| T3[Tx3]
+    C1[UTxO C1: NFT3 + PKFrag3]:::nft3 -->|SigFrag3| T3[Tx3]
     T3 --> C2[UTxO C2: NFT3 + Datum3]
 
-    D1[UTxO D1: NFT4 + PKFrag4] -->|SigFrag4| T4[Tx4]
-    T4 --> D2[UTxO D2: NFT4 + Datum4]
-
     %% Aggregation transaction
-    A2 -->|consume| T5[Tx5: Aggregate Datums]
-    B2 -->|consume| T5
-    C2 -->|consume| T5
-    D2 -->|consume| T5
-    T5 --> V[Verify full signature → Commit]
+    A2 -->|consume| T4[Tx4: Aggregate Datums]
+    B2 -->|consume| T4
+    C2 -->|consume| T4
+    T4 --> V[Verify full signature → Commit]
 
+    classDef nft1 stroke:#FF6B6B,stroke-width:2px
+    classDef nft2 stroke:#4ECDC4,stroke-width:2px
+    classDef nft3 stroke:#FFD166,stroke-width:2px
 ```
 
 The final transaction may also burn the tokens.
@@ -55,38 +54,22 @@ Repeating the fragment‑extraction step for each of the eight NFTs yields eight
 ```mermaid
 flowchart TD
     %% Minting transaction
-    M[Mint Tx: Create 8 NFTs] --> D1[Distribution UTxO: All 8 NFTs + Merkle Root]
+    M[Mint Tx: Create 3 NFTs] --> D1[Distribution UTxO: All 3 NFTs + Merkle Root]
 
     %% Initial state
     D1 -->|Extract NFT1| T1[Tx1]
-    T1 --> D2[Distribution UTxO: 7 NFTs + Merkle Root]
-    T1 --> F1[Fragment UTxO: NFT1 + PKFrag1]
+    T1 --> D2[Distribution UTxO: 2 NFTs + Merkle Root]
+    T1 --> A1[UTxO A1: NFT1 + PKFrag1]:::nft1
 
     D2 -->|Extract NFT2| T2[Tx2]
-    T2 --> D3[Distribution UTxO: 6 NFTs + Merkle Root]
-    T2 --> F2[Fragment UTxO: NFT2 + PKFrag2]
+    T2 --> D3[Distribution UTxO: 1 NFT + Merkle Root]
+    T2 --> B1[UTxO B1: NFT2 + PKFrag2]:::nft2
 
     D3 -->|Extract NFT3| T3[Tx3]
-    T3 --> D4[Distribution UTxO: 5 NFTs + Merkle Root]
-    T3 --> F3[Fragment UTxO: NFT3 + PKFrag3]
+    T3 --> C1[UTxO C1: NFT3 + PKFrag3]:::nft3
 
-    D4 -->|Extract NFT4| T4[Tx4]
-    T4 --> D5[Distribution UTxO: 4 NFTs + Merkle Root]
-    T4 --> F4[Fragment UTxO: NFT4 + PKFrag4]
-
-    D5 -->|Extract NFT5| T5[Tx5]
-    T5 --> D6[Distribution UTxO: 3 NFTs + Merkle Root]
-    T5 --> F5[Fragment UTxO: NFT5 + PKFrag5]
-
-    D6 -->|Extract NFT6| T6[Tx6]
-    T6 --> D7[Distribution UTxO: 2 NFTs + Merkle Root]
-    T6 --> F6[Fragment UTxO: NFT6 + PKFrag6]
-
-    D7 -->|Extract NFT7| T7[Tx7]
-    T7 --> D8[Distribution UTxO: 1 NFT + Merkle Root]
-    T7 --> F7[Fragment UTxO: NFT7 + PKFrag7]
-
-    D8 -->|Extract NFT8| T8[Tx8]
-    T8 --> F8[Fragment UTxO: NFT8 + PKFrag8]
+    classDef nft1 stroke:#FF6B6B,stroke-width:2px
+    classDef nft2 stroke:#4ECDC4,stroke-width:2px
+    classDef nft3 stroke:#FFD166,stroke-width:2px
 ```
 
