@@ -6,7 +6,8 @@
     "run:preview": "deno run --allow-read --allow-env --allow-ffi --allow-net --allow-write --env index.ts",
     "persistenceTest": "deno run --allow-read --allow-env --allow-ffi --allow-write lamportPersistenceExperiment.ts",
     "lamportExperiment": "deno run --allow-read --allow-env --allow-ffi --allow-write lamportExperiment.ts",
-    "mk:accounts": "deno run --allow-read --allow-env --allow-ffi --allow-write createTestAccounts.ts"
+    "mk:accounts": "deno run --allow-read --allow-env --allow-ffi --allow-write createTestAccounts.ts",
+    "build" : "cd lamport-validator && aiken build"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1"
