@@ -59,6 +59,7 @@ Deno.test("Mint our 8 tokens", async () => {
         .mintAssets(assetsToMint, MintAction.Mint)
         .attach.MintingPolicy(mintingPolicy)
         // .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
+        .pay.ToContract(scriptAddress, {kind: "inline", value: Data.void()}, assetsToMint)
         .complete();
 
    
