@@ -97,16 +97,16 @@ validator manysteplamport(_version: Int) {
         // amount minted of each token must be 1
         expect Some(output) = find_output_with_tokens(policy_id, outputs)
         expect InlineDatum(datum) = output.datum
-        // expect Initial(tokens_not_initalized, public_key_merkle_root) = datum
+        expect Initial(tokens_not_initalized, public_key_merkle_root) = datum
 
         expect Script(locked_script) = output.address.payment_credential
         and {
           True,
           True,
           // none have been initialized yet
-          // tokens_not_initalized == 8,
+          tokens_not_initalized == 8,
           // merkle root length must be 32 bytes
-          // bytearray.length(public_key_merkle_root) == 32,
+          bytearray.length(public_key_merkle_root) == 32,
           // mint 8 tokens
           list.length(mint_list) == 8,
           // must lock in same script as mint
