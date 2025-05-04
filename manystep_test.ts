@@ -42,7 +42,9 @@ const MintAction = {
 };
 
 const State = {
-    Initial: (tokensNotInitialized: BigInt, publicKeyMerkleRoot: Uint8Array) => Data.to(new Constr(0, [tokensNotInitialized.toString(), toHex(publicKeyMerkleRoot)])),
+    Initial: (tokensNotInitialized: bigint, publicKeyMerkleRoot: Uint8Array) => Data.to(
+      new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)])
+    ),
     Default: () => new Constr(1, []),
 }
 
@@ -52,14 +54,14 @@ Deno.test("Mint our 8 tokens", async () => {
 
     const seed = await generateSeed();
     console.log(`seed: ${seed}`);
-    // const initialState = State.Initial(8n, seed);
-    // console.log(initialState);
+    const initialState = State.Initial(8n, seed);
+    console.log(`Initial state: ${initialState}`);
 
     const tx = await lucid.newTx()
         .mintAssets(assetsToMint, MintAction.Mint)
         .attach.MintingPolicy(mintingPolicy)
-        // .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
-        .pay.ToContract(scriptAddress, {kind: "inline", value: Data.void()}, assetsToMint)
+        .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
+        // .pay.ToContract(scriptAddress, {kind: "inline", value: Data.void()}, assetsToMint)
         .complete();
 
    
