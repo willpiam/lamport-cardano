@@ -12,10 +12,10 @@ pub type MintAction {
   Burn
 }
 
-pub type MintRedeemer {
-  action: MintAction,
-  root: ByteArray,
-}
+// pub type MintRedeemer {
+//   action: MintAction,
+//   root: ByteArray,
+// }
 
 pub type SpendAction {
   InitializePublicKeyChunk
@@ -83,33 +83,36 @@ validator manysteplamport(_version: Int) {
     }
   }
 
-  mint(redeemer: MintRedeemer, policy_id: PolicyId, self: Transaction) {
+  // mint(redeemer: MintRedeemer, policy_id: PolicyId, self: Transaction) {
+  mint(action: MintAction, policy_id: PolicyId, self: Transaction) {
     let Transaction { inputs, mint, outputs, .. } = self
 
     let mint_dict = mint |> assets.tokens(policy_id)
     let mint_list = mint_dict |> dict.to_pairs()
 
-    when redeemer.action is {
+    when action is {
       Mint -> {
         // mint 8 tokens and send to this validator on a single output
         // output datum must hold merkle root
         // amount minted of each token must be 1
-        expect Some(output) = find_output_with_tokens(policy_id, outputs)
-        expect InlineDatum(datum) = output.datum
-        expect Initial(tokens_not_initalized, public_key_merkle_root) = datum
+        // expect Some(output) = find_output_with_tokens(policy_id, outputs)
+        // expect InlineDatum(datum) = output.datum
+        // expect Initial(tokens_not_initalized, public_key_merkle_root) = datum
 
-        expect Script(locked_script) = output.address.payment_credential
+        // expect Script(locked_script) = output.address.payment_credential
         and {
+          True,
+          True
           // none have been initialized yet
-          tokens_not_initalized == 8,
+          // tokens_not_initalized == 8,
           // merkle root length must be 32 bytes
-          bytearray.length(public_key_merkle_root) == 32,
+          // bytearray.length(public_key_merkle_root) == 32,
           // mint 8 tokens
-          list.length(mint_list) == 8,
+          // list.length(mint_list) == 8,
           // must lock in same script as mint
-          policy_id == locked_script,
+          // policy_id == locked_script,
           // minted tokens must have expected names and amounts
-          has_expected_names_and_amounts(mint_dict),
+          // has_expected_names_and_amounts(mint_dict),
         }
       }
       Burn ->

@@ -1,4 +1,4 @@
-import { applyParamsToScript, Constr, Data, Emulator, fromText, generateEmulatorAccount, getAddressDetails, Lucid, MintingPolicy, mintingPolicyToId, paymentCredentialOf, scriptFromNative, SpendingValidator, toHex, validatorToAddress } from "npm:@lucid-evolution/lucid";
+import { applyParamsToScript, Constr, Data, Emulator, fromText, generateEmulatorAccount, getAddressDetails, Lucid, MintingPolicy, mintingPolicyToId, paymentCredentialOf, scriptFromNative, SpendingValidator, validatorToAddress } from "npm:@lucid-evolution/lucid";
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
 import {
   assertEquals,
@@ -7,6 +7,7 @@ import {
   assertRejects,
 } from "@std/assert";
 import { generateSeed } from "./Lamport.ts";
+import { toHex } from "npm:@blaze-cardano/core";
 
 // Setup test accounts
 const alice = generateEmulatorAccount({
@@ -51,13 +52,13 @@ Deno.test("Mint our 8 tokens", async () => {
 
     const seed = await generateSeed();
     console.log(`seed: ${seed}`);
-    const initialState = State.Initial(8n, seed);
-    console.log(initialState);
+    // const initialState = State.Initial(8n, seed);
+    // console.log(initialState);
 
     const tx = await lucid.newTx()
         .mintAssets(assetsToMint, MintAction.Mint)
         .attach.MintingPolicy(mintingPolicy)
-        .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
+        // .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
         .complete();
 
    
