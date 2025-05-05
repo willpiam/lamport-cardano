@@ -7,11 +7,16 @@ import { Buffer } from "node:buffer";
     A class for creating and using lamport keys & signatures
 */
 
+type LamportKey = [Uint8Array[], Uint8Array[]];
+type LamportSignature = Uint8Array[];
+type LamportPublicKey = LamportKey;
+type LamportPrivateKey = LamportKey;
+
 const generateSeed = async () => await sha256(new Uint8Array(crypto.randomBytes(32)))
 
 const uint8ArrayToBinaryString = (uint8arr: Uint8Array): string => Array.from(uint8arr, byte => byte.toString(2).padStart(8, '0')).join('');
 
-const validateKey = (key: [Uint8Array[], Uint8Array[]], keyStrength : number): boolean => {
+const validateKey = (key: LamportKey, keyStrength : number): boolean => {
     // key is a tuple of two arrays of 256 elements each
     if (key.length !== 2)
         return false;
@@ -33,14 +38,14 @@ const validateKey = (key: [Uint8Array[], Uint8Array[]], keyStrength : number): b
     return true;
 };
 
-const signatureToHex = (signature: Uint8Array[]): string[] => signature.map(toHex);
+const signatureToHex = (signature: LamportSignature): string[] => signature.map(toHex);
 
-const keyToHex = (key: [Uint8Array[], Uint8Array[]]): [string[], string[]] => {
+const keyToHex = (key: LamportKey): [string[], string[]] => {
     const [group1, group2] = key;
     return [group1.map(toHex), group2.map(toHex)];
 }
 
-const compareKeys = (key1: [Uint8Array[], Uint8Array[]], key2: [Uint8Array[], Uint8Array[]], keyStrength : number): boolean => {
+const compareKeys = (key1: LamportKey, key2: LamportKey, keyStrength : number): boolean => {
     const hexKey1 = keyToHex(key1);
     const hexKey2 = keyToHex(key2);
 
@@ -66,7 +71,7 @@ class Lamport {
         this.textEncoder = new TextEncoder()
     }
 
-    async privateKey(): Promise<[Uint8Array[], Uint8Array[]]> {
+    async privateKey(): Promise<LamportPrivateKey> {
         const left = [];
         const right = [];
 
@@ -79,10 +84,10 @@ class Lamport {
         return [left, right];
     }
 
-    async publicKey(): Promise<[Uint8Array[], Uint8Array[]]> {
+    async publicKey(): Promise<LamportPublicKey> {
         const [left, right] = await this.privateKey();
 
-        const pub: [Uint8Array[], Uint8Array[]] = [[], []];
+        const pub: LamportPublicKey = [[], []];
 
         for (let i = 0; i < this.keyStrength; i++) {
             pub[0].push(await sha256(left[i]));
@@ -92,13 +97,13 @@ class Lamport {
         return pub;
     }
 
-    async sign(message: Uint8Array): Promise<Uint8Array[]> {
+    async sign(message: Uint8Array): Promise<LamportSignature> {
         const msgHash = await sha256(message);
         const binaryHash = uint8ArrayToBinaryString(msgHash);
 
         const [left, right] = await this.privateKey();
 
-        const signature: Uint8Array[] = [];
+        const signature: LamportSignature = [];
 
         for (let i = 0; i < this.keyStrength; i++) {
             const bit = binaryHash[i];
@@ -108,7 +113,7 @@ class Lamport {
         return signature;
     }
 
-    static async verify(message: Uint8Array, signature: Uint8Array[], publicKey: [Uint8Array[], Uint8Array[]], keyStrength : number ) : Promise<boolean> {
+    static async verify(message: Uint8Array, signature: LamportSignature, publicKey: LamportPublicKey, keyStrength : number ) : Promise<boolean> {
         const msgHash = await sha256(message);
         const binaryHash = uint8ArrayToBinaryString(msgHash);
 
@@ -155,5 +160,9 @@ export {
     validateKey,
     keyToHex,
     compareKeys,
-    signatureToHex
+    signatureToHex,
+    type LamportKey,
+    type LamportSignature,
+    type LamportPublicKey,
+    type LamportPrivateKey
 }

@@ -5,9 +5,11 @@ import {
   assert,
   assertExists,
   assertRejects,
+  assertNotEquals,
 } from "@std/assert";
 import { generateSeed } from "./Lamport.ts";
 import { toHex } from "npm:@blaze-cardano/core";
+import { MultiStepLamport } from "./MultiStepLamport.ts";
 
 // Setup test accounts
 const alice = generateEmulatorAccount({
@@ -48,12 +50,45 @@ const State = {
     Default: () => new Constr(1, []),
 }
 
+Deno.test("Off-chain multi-step lamport", async () => {
+  const msLamport = new MultiStepLamport(await generateSeed());
+  const privateKeyParts = await msLamport.privateKeyParts();
 
+  // assert that the length of the private key parts is 8
+  assertEquals(privateKeyParts.length, 8);
+
+  for (const part of privateKeyParts) {
+    assertEquals(part[0].length, 32);
+    assertEquals(part[1].length, 32);
+
+    // assert that the left and right parts are different
+    assertNotEquals(part[0], part[1]);
+  }
+
+  const publicKeyParts = await msLamport.publicKeyParts();
+  assertEquals(publicKeyParts.length, 8);
+
+  for (const part of publicKeyParts) {
+    assertEquals(part[0].length, 32);
+    assertEquals(part[1].length, 32);
+
+    // assert that the left and right parts are different
+    assertNotEquals(part[0], part[1]);
+  }
+
+  const signatureParts = await msLamport.signToParts(new TextEncoder().encode("Hello, world!"));
+  assertEquals(signatureParts.length, 8);
+
+  for (const part of signatureParts) {
+    assertEquals(part.length, 32);
+  }
+
+  const verified = await MultiStepLamport.verifyFromParts(new TextEncoder().encode("Hello, world!"), signatureParts, publicKeyParts);
+  assertEquals(verified, true);
+});
 
 Deno.test("Mint our 8 tokens", async () => {
-
     const seed = await generateSeed();
-    console.log(`seed: ${seed}`);
     const initialState = State.Initial(8n, seed);
     console.log(`Initial state: ${initialState}`);
 
@@ -61,10 +96,10 @@ Deno.test("Mint our 8 tokens", async () => {
         .mintAssets(assetsToMint, MintAction.Mint)
         .attach.MintingPolicy(mintingPolicy)
         .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
-        // .pay.ToContract(scriptAddress, {kind: "inline", value: Data.void()}, assetsToMint)
         .complete();
 
-   
-    
+    const signed = await tx.sign.withWallet().complete();
+    const txHash = await signed.submit();
 
+    await lucid.awaitTx(txHash);
 });
