@@ -23,9 +23,9 @@ pub type SpendAction {
   VerifyFullSignature
 }
 
-pub type SpendRedeemer {
-  action: SpendAction,
-}
+// pub type SpendRedeemer {
+//   action: SpendAction,
+// }
 
 pub type State {
   Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
@@ -64,11 +64,11 @@ pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bo
 validator manysteplamport(_version: Int) {
   spend(
     datum: Option<Data>,
-    redeemer: SpendRedeemer,
+    action: SpendAction,
     _utxo: OutputReference,
     _self: Transaction,
   ) {
-    when redeemer.action is {
+    when action is {
       InitializePublicKeyChunk ->
         // send 1 token back to this validator on an output with a public key chunk which fits in the merkle tree
         // send the rest of the tokens to the same validator but on a single output

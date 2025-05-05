@@ -1,5 +1,6 @@
 import {
   applyParamsToScript,
+  Assets,
   Constr,
   Data,
   Emulator,
@@ -23,7 +24,7 @@ import {
   assertRejects,
 } from "@std/assert";
 import { generateSeed } from "./Lamport.ts";
-import { toHex } from "npm:@blaze-cardano/core";
+import { Redeemer, toHex } from "npm:@blaze-cardano/core";
 import { MultiStepLamport } from "./MultiStepLamport.ts";
 import { MerkleTree } from "./MerkleTree.ts";
 
@@ -75,6 +76,12 @@ const State = {
       new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)]),
     ),
   Default: () => new Constr(1, []),
+};
+
+const SpendAction = {
+  InitializePublicKeyChunk: Data.to(new Constr(0, [])),
+  VerifySignatureChunk: Data.to(new Constr(1, [])),
+  VerifyFullSignature: Data.to(new Constr(2, [])),
 };
 
 Deno.test("Off-chain multi-step lamport", async () => {
@@ -159,15 +166,24 @@ Deno.test("Off-chain Merkle tree", async () => {
 
 type TestState = {
   msLamport : MultiStepLamport | null,
+  assetsToInitialize : Assets | null,
 }
 const testState : TestState = {
   msLamport : null,
+  assetsToInitialize : null,
 }
+testState.assetsToInitialize = assetsToMint;
+
 Deno.test("Mint our 8 tokens", async () => {
   testState.msLamport = new MultiStepLamport(await generateSeed());
   const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
   const initialState = State.Initial(8n, merkleRoot);
   console.log(`Initial state: ${initialState}`);
+
+  {
+    const scriptUtxos = await lucid.utxosAt(scriptAddress);
+    assertEquals(scriptUtxos.length, 0, "There should be no utxos on the script address at this point in the test");
+  }
 
   const tx = await lucid.newTx()
     .mintAssets(assetsToMint, MintAction.Mint)
@@ -183,6 +199,13 @@ Deno.test("Mint our 8 tokens", async () => {
   const txHash = await signed.submit();
 
   await lucid.awaitTx(txHash);
+
+  const scriptUtxos = await lucid.utxosAt(scriptAddress);
+  assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
+  const scriptUtxo = scriptUtxos[0];
+  const assetsOnScript = Object.keys(scriptUtxo.assets);
+  console.log("Assets on script:", assetsOnScript);
+  assertEquals(assetsOnScript.length, 9, "There should be 9 (8 tokens + lovelace) assets on the script utxo");
 });
 
 /*
@@ -197,6 +220,41 @@ Deno.test("Mint our 8 tokens", async () => {
   This procedure will be repeated for each public key chunk.
  */
 Deno.test("Initalize the first public key chunk", async () => {
+  assertExists(testState.assetsToInitialize, "The assetsToInitialize should be initialized at this point in the test");
+
+  const scriptUtxos = await lucid.utxosAt(scriptAddress);
+  assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
+
+  assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+  const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
+  const newInitialState = State.Initial(7n, merkleRoot);
+
+  const unitToSpend = policyId + fromText("1");
+  // remove unit to spend from assetsToInitialize
+  delete testState.assetsToInitialize[unitToSpend];
+
+  const PartialPublicKeyDatum = Data.void();
+
+  const tx = await lucid.newTx()
+    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk)
+    .attach.SpendingValidator(validator)
+    .pay.ToContract(
+      scriptAddress, 
+      { kind: "inline", value: newInitialState },
+      testState.assetsToInitialize,
+    )
+    .pay.ToContract(
+      scriptAddress,
+      { kind: "inline", value: PartialPublicKeyDatum },
+      { [unitToSpend]: 1n },
+    )
+    .complete();
+
+  const signed = await tx.sign.withWallet().complete();
+  const txHash = await signed.submit();
+
+  await lucid.awaitTx(txHash);
+
 
 
 
