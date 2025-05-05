@@ -1,5 +1,7 @@
+import { toHex } from "npm:@blaze-cardano/core";
 import { Lamport, LamportKey, LamportPrivateKey, LamportPublicKey, LamportSignature } from "./Lamport.ts";
-
+import { MerkleTree } from "./MerkleTree.ts";
+import { sha256 } from "./sha256.ts";
 type LamportSignatureChunk = LamportSignature; 
 type LamportKeyChunk = LamportKey;
 type LamportPublicKeyChunk = LamportPublicKey;
@@ -13,12 +15,25 @@ const breakKeyIntoChunks = (key : LamportKey) : LamportKeyChunk[] => Array.from(
     return [left, right];
 });
 
+const concatMany = (elements : Uint8Array[]) : Uint8Array => {
+    const length = elements.reduce((acc, curr) => acc + curr.length, 0);
+    const result = new Uint8Array(length);
+    let offset = 0;
+    for (const element of elements) {
+        result.set(element, offset);
+        offset += element.length;
+    }
+    return result;
+}
 /*
     Lamport scheme which can be broken into 8 steps
 */
 class MultiStepLamport extends Lamport {
+  private publicKeyMerkleTree: MerkleTree | null;
+
   constructor(initialSecret: Uint8Array) {
     super(initialSecret, 256);
+    this.publicKeyMerkleTree = null;
   }
 
   async privateKeyParts(): Promise<LamportPrivateKeyChunk[]> {
@@ -34,6 +49,34 @@ class MultiStepLamport extends Lamport {
   async signToParts(message: Uint8Array): Promise<LamportSignatureChunk[]> {
     const signature = await super.sign(message);
     return breakSignatureIntoChunks(signature);
+  }
+
+  /*
+
+  */
+  async publicKeyMerkleRoot(): Promise<Uint8Array> {
+    if (this.publicKeyMerkleTree !== null) {
+        return this.publicKeyMerkleTree.getRoot();
+    }
+
+    const publicKeyParts = await this.publicKeyParts();
+    const publicKeyPartsHashes = [] as Uint8Array[];        // leafs
+
+    for (let i = 0; i < 8; i++) {
+        const part : LamportKeyChunk = publicKeyParts[i];
+        const flat = concatMany(part.flat());
+        console.log(`Part ${i}. `, toHex(flat));
+
+        const hash = await sha256(flat);
+        publicKeyPartsHashes.push(hash);
+    }
+
+    console.log(`Public key parts hashes:`);
+    publicKeyPartsHashes.forEach(hash => console.log(toHex(hash)));
+
+    this.publicKeyMerkleTree = new MerkleTree(publicKeyPartsHashes);
+    await this.publicKeyMerkleTree.build();
+    return this.publicKeyMerkleTree.getRoot();
   }
 
   static async verifyFromParts(message: Uint8Array, signature: LamportSignatureChunk[], publicKeyParts: LamportPublicKeyChunk[]): Promise<boolean> {

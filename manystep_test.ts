@@ -1,15 +1,31 @@
-import { applyParamsToScript, Constr, Data, Emulator, fromText, generateEmulatorAccount, getAddressDetails, Lucid, MintingPolicy, mintingPolicyToId, paymentCredentialOf, scriptFromNative, SpendingValidator, validatorToAddress } from "npm:@lucid-evolution/lucid";
+import {
+  applyParamsToScript,
+  Constr,
+  Data,
+  Emulator,
+  fromText,
+  generateEmulatorAccount,
+  getAddressDetails,
+  Lucid,
+  MintingPolicy,
+  mintingPolicyToId,
+  paymentCredentialOf,
+  scriptFromNative,
+  SpendingValidator,
+  validatorToAddress,
+} from "npm:@lucid-evolution/lucid";
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
 import {
-  assertEquals,
   assert,
+  assertEquals,
   assertExists,
-  assertRejects,
   assertNotEquals,
+  assertRejects,
 } from "@std/assert";
 import { generateSeed } from "./Lamport.ts";
 import { toHex } from "npm:@blaze-cardano/core";
 import { MultiStepLamport } from "./MultiStepLamport.ts";
+import { MerkleTree } from "./MerkleTree.ts";
 
 // Setup test accounts
 const alice = generateEmulatorAccount({
@@ -21,22 +37,32 @@ const lucid = await Lucid(emulator, "Custom");
 lucid.selectWallet.fromSeed(alice.seedPhrase);
 const aliceAddress = await lucid.wallet().address();
 
-const rawValidator = blueprint.validators.find(v => v.title === "manystep.manysteplamport.spend")!.compiledCode;
+const rawValidator =
+  blueprint.validators.find((v) =>
+    v.title === "manystep.manysteplamport.spend"
+  )!.compiledCode;
 const parameterizedValidator = applyParamsToScript(rawValidator, [0n]);
 
-const mintingPolicy : MintingPolicy = {
-    type: "PlutusV3",
-    script: parameterizedValidator
-}
+const mintingPolicy: MintingPolicy = {
+  type: "PlutusV3",
+  script: parameterizedValidator,
+};
 const policyId = mintingPolicyToId(mintingPolicy);
-const units = Array.from({length: 8}, (_, i) => policyId + fromText(`${i + 1}`));
-const assetsToMint = units.reduce((acc, unit) => ({...acc, [unit]: 1n}), {});
+const units = Array.from(
+  { length: 8 },
+  (_, i) => policyId + fromText(`${i + 1}`),
+);
+const assetsToMint = units.reduce((acc, unit) => ({ ...acc, [unit]: 1n }), {});
 
-const validator : SpendingValidator = {
-    type: "PlutusV3",
-    script: parameterizedValidator
-}
-const scriptAddress = validatorToAddress("Custom", validator, getAddressDetails(aliceAddress).stakeCredential);
+const validator: SpendingValidator = {
+  type: "PlutusV3",
+  script: parameterizedValidator,
+};
+const scriptAddress = validatorToAddress(
+  "Custom",
+  validator,
+  getAddressDetails(aliceAddress).stakeCredential,
+);
 
 const MintAction = {
   Mint: Data.to(new Constr(0, [])),
@@ -44,11 +70,12 @@ const MintAction = {
 };
 
 const State = {
-    Initial: (tokensNotInitialized: bigint, publicKeyMerkleRoot: Uint8Array) => Data.to(
-      new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)])
+  Initial: (tokensNotInitialized: bigint, publicKeyMerkleRoot: Uint8Array) =>
+    Data.to(
+      new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)]),
     ),
-    Default: () => new Constr(1, []),
-}
+  Default: () => new Constr(1, []),
+};
 
 Deno.test("Off-chain multi-step lamport", async () => {
   const msLamport = new MultiStepLamport(await generateSeed());
@@ -76,30 +103,102 @@ Deno.test("Off-chain multi-step lamport", async () => {
     assertNotEquals(part[0], part[1]);
   }
 
-  const signatureParts = await msLamport.signToParts(new TextEncoder().encode("Hello, world!"));
+  const signatureParts = await msLamport.signToParts(
+    new TextEncoder().encode("Hello, world!"),
+  );
   assertEquals(signatureParts.length, 8);
 
   for (const part of signatureParts) {
     assertEquals(part.length, 32);
   }
 
-  const verified = await MultiStepLamport.verifyFromParts(new TextEncoder().encode("Hello, world!"), signatureParts, publicKeyParts);
+  const verified = await MultiStepLamport.verifyFromParts(
+    new TextEncoder().encode("Hello, world!"),
+    signatureParts,
+    publicKeyParts,
+  );
   assertEquals(verified, true);
+
+  // get the merkle root
+  const merkleRoot = await msLamport.publicKeyMerkleRoot();
+  console.log("Merkle root:", toHex(merkleRoot));
 });
 
+Deno.test("Off-chain Merkle tree", async () => {
+  const initialData = Array.from(
+    { length: 8 },
+    (_, i) => new TextEncoder().encode(`${i + 1}`),
+  );
+  console.log("Initial data:", initialData);
+
+  const merkleTree = new MerkleTree(initialData);
+  await merkleTree.build();
+
+  const root = merkleTree.getRoot();
+  console.log("Root:", toHex(root));
+
+  {
+    const proof = merkleTree.getProofByIndex(0);
+    const verified = await merkleTree.verifyProof(initialData[0], proof, root);
+    console.log("Verified:", verified);
+    assertEquals(verified, true, "Proof should be valid for the first element");
+
+    // cannot use this proof to verify the second element
+    const verified2 = await merkleTree.verifyProof(initialData[1], proof, root);
+    console.log("Verified2:", verified2);
+    assertEquals(verified2, false, "Proof should not be valid for other elements");
+  }
+
+  // generate and verify a proof for each element
+  for (let i = 0; i < merkleTree.leafCount - 1; i++) {
+    const proof = merkleTree.getProofByIndex(i);
+    const verified = await merkleTree.verifyProof(initialData[i], proof, root);
+    assertEquals(verified, true, "Proof should be valid for the element");
+  }
+});
+
+type TestState = {
+  msLamport : MultiStepLamport | null,
+}
+const testState : TestState = {
+  msLamport : null,
+}
 Deno.test("Mint our 8 tokens", async () => {
-    const seed = await generateSeed();
-    const initialState = State.Initial(8n, seed);
-    console.log(`Initial state: ${initialState}`);
+  testState.msLamport = new MultiStepLamport(await generateSeed());
+  const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
+  const initialState = State.Initial(8n, merkleRoot);
+  console.log(`Initial state: ${initialState}`);
 
-    const tx = await lucid.newTx()
-        .mintAssets(assetsToMint, MintAction.Mint)
-        .attach.MintingPolicy(mintingPolicy)
-        .pay.ToContract(scriptAddress, {kind: "inline", value: initialState}, assetsToMint)
-        .complete();
+  const tx = await lucid.newTx()
+    .mintAssets(assetsToMint, MintAction.Mint)
+    .attach.MintingPolicy(mintingPolicy)
+    .pay.ToContract(
+      scriptAddress,
+      { kind: "inline", value: initialState },
+      assetsToMint,
+    )
+    .complete();
 
-    const signed = await tx.sign.withWallet().complete();
-    const txHash = await signed.submit();
+  const signed = await tx.sign.withWallet().complete();
+  const txHash = await signed.submit();
 
-    await lucid.awaitTx(txHash);
+  await lucid.awaitTx(txHash);
 });
+
+/*
+  At this point we have 8 tokens in a single utxo on our script. 
+  On this utxo we have a datum with a counter set to 8 (representing that we have 8 tokens to initialize)
+  and a merkle root.
+
+  Next we will initialize the first public key chunk. This will mean spending the 8 tokens and
+  creating 2 new utxos. The first will hold the remaining 7 tokens. The counter will be decremented by 1 and the 
+  merkle root will remain unchanged. The second utxo will hold 1 token and a datum containing the public key chunk. 
+
+  This procedure will be repeated for each public key chunk.
+ */
+Deno.test("Initalize the first public key chunk", async () => {
+
+
+
+
+})
