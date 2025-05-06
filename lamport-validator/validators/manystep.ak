@@ -161,11 +161,11 @@ validator manysteplamport(_version: Int) {
           tokens_not_initalized == 8 - position, 
           // chunk position must be accurate
           chunk_position == position,
-          or {
-            // if looking at the last token we will not create a new "uninitialized" output
-            expected_asset_name == eight,
-            // otherwise we need to ensure the new uninitialized output is properly formed
-            check_remaining_uninitialized(outputs, policy_id, expected_asset_name, uninitialized_tokens_input, public_key_merkle_root, tokens_not_initalized),
+          // if we should have a new uninitialized output -> check for it
+          if position != 7 {
+            check_remaining_uninitialized(outputs, policy_id, expected_asset_name, uninitialized_tokens_input, public_key_merkle_root, tokens_not_initalized)
+          } else {
+            True
           }
         }
       }
