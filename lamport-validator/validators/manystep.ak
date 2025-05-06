@@ -128,7 +128,6 @@ validator manysteplamport(_version: Int) {
     let Transaction { inputs, outputs, .. } = self
     expect Some(state) = datum
 
-
     when action is {
       InitializePublicKeyChunk { merkle_proof, position } -> {
         // send 1 token back to this validator on an output with a public key chunk which fits in the merkle tree
@@ -150,8 +149,9 @@ validator manysteplamport(_version: Int) {
         let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
 
         and {
-          // TODO: make sure initialized_output contains a public key chunk in the datum
           // TODO: validate merkle proof
+          // the initialized output must be on the same address (this validator)
+          initialized_output.address == uninitialized_tokens_input.output.address,
           // chunk is the expected shape
           list.length(chunk.pk_left) == 32,
           list.length(chunk.pk_right) == 32,
