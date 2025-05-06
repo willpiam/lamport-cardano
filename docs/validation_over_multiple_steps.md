@@ -40,10 +40,10 @@ Because the full public key is too large to distribute its eight constituent fra
 
 In the first transaction, mint all eight NFTs into a single UTxO guarded by a distribution validator. The datum of this UTxO records the Merkle root of the eight key fragments, with each leaf committing to one fragment of the public key. Note that the position in the merkle tree reflects the fragments position in the full public key. 
 
-
-
 ### Iterative Fragment Extraction
 To deploy an individual key public key fragment, spend the relevant NFT from the distribution UTxO and lock it with the corisponding public key fragment in the datum. The validator enforces that the key chunck is the leaf at the expected position in the merkle tree. 
+
+*To make it easy to identify the utxo with the uninitalized tokens an additional NFT could be used.*
 
 ~~The validator checks the NFT against the stored Merkle root, then outputs a new UTxO locked by the fragment‑revealing script. This new UTxO's datum must contain exactly the public‑key fragment corresponding to the NFT's index.~~
 

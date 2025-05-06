@@ -75,26 +75,46 @@ const State = {
     Data.to(
       new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)]),
     ),
-  PreparedPublicKeyChunk: (chunkPosition: bigint, chunk: LamportPublicKeyChunk) => 
-    Data.to(new Constr(1, [
-      chunkPosition, 
-      new Constr(0, [chunk[0].map(toHex), chunk[1].map(toHex)])
-    ])),
+  PreparedPublicKeyChunk: (
+    chunkPosition: bigint,
+    chunk: LamportPublicKeyChunk,
+  ) =>
+    Data.to(
+      new Constr(1, [
+        chunkPosition,
+        new Constr(0, [chunk[0].map(toHex), chunk[1].map(toHex)]),
+      ]),
+    ),
   Default: () => new Constr(2, []),
 };
 
 const Bool = {
   False: new Constr(0, []),
   True: new Constr(1, []),
-}
+};
 
 // const constructorN = (n : number) => Data.to(new Constr(n, []));
 // const ProofNodeData = (proofNode : ProofNode) => Data.to(new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? 1n:0n]));
 // const ProofNodeData = (proofNode : ProofNode) => Data.to(new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? Bool.True : Bool.False]));
-const ProofNodeData = (proofNode : ProofNode) => new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? Bool.True : Bool.False]);
+const ProofNodeData = (proofNode: ProofNode) =>
+  new Constr(0, [
+    toHex(proofNode.hash),
+    proofNode.siblingOnLeft ? Bool.True : Bool.False,
+  ]);
 // const ProofNodeData = (proofNode : ProofNode) => new Constr(0, [toHex(proofNode.hash), proofNode.siblingOnLeft ? 1n:0n]);
 const SpendAction = {
-  InitializePublicKeyChunk: (merkleProof : ProofNode[], position : bigint, leafHash : Uint8Array) => Data.to(new Constr(0, [merkleProof.map(ProofNodeData), position, toHex(leafHash)])),
+  InitializePublicKeyChunk: (
+    merkleProof: ProofNode[],
+    position: bigint,
+    leafHash: Uint8Array,
+  ) =>
+    Data.to(
+      new Constr(0, [
+        merkleProof.map(ProofNodeData),
+        position,
+        toHex(leafHash),
+      ]),
+    ),
   VerifySignatureChunk: Data.to(new Constr(1, [])),
   VerifyFullSignature: Data.to(new Constr(2, [])),
 };
@@ -168,7 +188,11 @@ Deno.test("Off-chain Merkle tree", async () => {
     // cannot use this proof to verify the second element
     const verified2 = await merkleTree.verifyProof(initialData[1], proof, root);
     console.log("Verified2:", verified2);
-    assertEquals(verified2, false, "Proof should not be valid for other elements");
+    assertEquals(
+      verified2,
+      false,
+      "Proof should not be valid for other elements",
+    );
   }
 
   // generate and verify a proof for each element
@@ -180,13 +204,13 @@ Deno.test("Off-chain Merkle tree", async () => {
 });
 
 type TestState = {
-  msLamport : MultiStepLamport | null,
-  assetsToInitialize : Assets | null,
-}
-const testState : TestState = {
-  msLamport : null,
-  assetsToInitialize : null,
-}
+  msLamport: MultiStepLamport | null;
+  assetsToInitialize: Assets | null;
+};
+const testState: TestState = {
+  msLamport: null,
+  assetsToInitialize: null,
+};
 testState.assetsToInitialize = assetsToMint;
 
 Deno.test("Mint our 8 tokens", async () => {
@@ -194,11 +218,15 @@ Deno.test("Mint our 8 tokens", async () => {
   const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
   const initialState = State.Initial(8n, merkleRoot);
   console.log(`Initial state: ${initialState}`);
-  console.log(`%cInitial root:  ${toHex(merkleRoot)}`, "color: hotpink; font-weight: bold;");
+  console.log(`Initial root:  ${toHex(merkleRoot)}`);
 
   {
     const scriptUtxos = await lucid.utxosAt(scriptAddress);
-    assertEquals(scriptUtxos.length, 0, "There should be no utxos on the script address at this point in the test");
+    assertEquals(
+      scriptUtxos.length,
+      0,
+      "There should be no utxos on the script address at this point in the test",
+    );
   }
 
   const tx = await lucid.newTx()
@@ -217,36 +245,54 @@ Deno.test("Mint our 8 tokens", async () => {
   await lucid.awaitTx(txHash);
 
   const scriptUtxos = await lucid.utxosAt(scriptAddress);
-  assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
+  assertEquals(
+    scriptUtxos.length,
+    1,
+    "There should be 1 utxo on the script address at this point in the test",
+  );
   const scriptUtxo = scriptUtxos[0];
   const assetsOnScript = Object.keys(scriptUtxo.assets);
   console.log("Assets on script:", assetsOnScript);
-  assertEquals(assetsOnScript.length, 9, "There should be 9 (8 tokens + lovelace) assets on the script utxo");
+  assertEquals(
+    assetsOnScript.length,
+    9,
+    "There should be 9 (8 tokens + lovelace) assets on the script utxo",
+  );
 });
 
 /*
-  At this point we have 8 tokens in a single utxo on our script. 
+  At this point we have 8 tokens in a single utxo on our script.
   On this utxo we have a datum with a counter set to 8 (representing that we have 8 tokens to initialize)
   and a merkle root.
 
   Next we will initialize the first public key chunk. This will mean spending the 8 tokens and
-  creating 2 new utxos. The first will hold the remaining 7 tokens. The counter will be decremented by 1 and the 
-  merkle root will remain unchanged. The second utxo will hold 1 token and a datum containing the public key chunk. 
+  creating 2 new utxos. The first will hold the remaining 7 tokens. The counter will be decremented by 1 and the
+  merkle root will remain unchanged. The second utxo will hold 1 token and a datum containing the public key chunk.
 
   This procedure will be repeated for each public key chunk.
  */
 Deno.test("Initalize the first public key chunk", async () => {
-  assertExists(testState.assetsToInitialize, "The assetsToInitialize should be initialized at this point in the test");
+  assertExists(
+    testState.assetsToInitialize,
+    "The assetsToInitialize should be initialized at this point in the test",
+  );
 
   const scriptUtxos = await lucid.utxosAt(scriptAddress);
-  assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
+  assertEquals(
+    scriptUtxos.length,
+    1,
+    "There should be 1 utxo on the script address at this point in the test",
+  );
 
-  assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+  assertExists(
+    testState.msLamport,
+    "The msLamport should be initialized at this point in the test",
+  );
   const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
-  const merkleProof : ProofNode[] = testState.msLamport.publicKeyMerkleProof(0);
-  console.log(`%cMerkle proof:  ${merkleProof.map(p => toHex(p.hash)).join(", ")}`, "color: hotpink; font-weight: bold;");
+  const merkleProof: ProofNode[] = testState.msLamport.publicKeyMerkleProof(0);
+  console.log(`Merkle proof:  ${merkleProof.map((p) => toHex(p.hash)).join(", ")}`);
   const leafHash = testState.msLamport.chunkLeafHash(0);
-  console.log(`%cLeaf hash: ${toHex(leafHash)}`, "color: purple; font-weight: bold;");
+  console.log(`Leaf hash: ${toHex(leafHash)}`);
 
   const newInitialState = State.Initial(7n, merkleRoot);
 
@@ -258,16 +304,22 @@ Deno.test("Initalize the first public key chunk", async () => {
   const firstPublicKeyChunk = publicKeyParts[0];
 
   const tx = await lucid.newTx()
-    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleProof, 0n, leafHash))
+    .collectFrom(
+      scriptUtxos,
+      SpendAction.InitializePublicKeyChunk(merkleProof, 0n, leafHash),
+    )
     .attach.SpendingValidator(validator)
     .pay.ToContract(
-      scriptAddress, 
+      scriptAddress,
       { kind: "inline", value: newInitialState },
       testState.assetsToInitialize,
     )
     .pay.ToContract(
       scriptAddress,
-      { kind: "inline", value: State.PreparedPublicKeyChunk(0n, firstPublicKeyChunk)},
+      {
+        kind: "inline",
+        value: State.PreparedPublicKeyChunk(0n, firstPublicKeyChunk),
+      },
       { [unitToSpend]: 1n },
     )
     .complete();
@@ -276,5 +328,68 @@ Deno.test("Initalize the first public key chunk", async () => {
   const txHash = await signed.submit();
 
   await lucid.awaitTx(txHash);
+});
 
-})
+Deno.test("Initialize the other public key chunks", async () => {
+  const initialize = async (position: number) => {
+    assert(position >= 0, "Position must be greater than or equal to 0");
+    assert(position < 8, "Position must be less than 8");
+
+    const scriptUtxos = await lucid.utxosAt(scriptAddress);
+    assert(scriptUtxos.length === 1 + position, "Unxpected number of script utxos");
+    assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+    const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
+    const merkleProof: ProofNode[] = testState.msLamport.publicKeyMerkleProof(position);
+    const leafHash = testState.msLamport.chunkLeafHash(position);
+
+    const newInitialState = State.Initial(8n - (BigInt(position) + 1n), merkleRoot);
+    const unitToSpend = policyId + fromText(`${position + 1}`);
+    
+    assertExists(testState.assetsToInitialize, "The assetsToInitialize should be initialized at this point in the test");
+    delete testState.assetsToInitialize[unitToSpend];
+  
+    const publicKeyParts = await testState.msLamport.publicKeyParts();
+    const publicKeyChunk = publicKeyParts[position];
+
+     // find the script utxo with the uninitialized tokens
+    const uninitializedUtxo = scriptUtxos.find((utxo) => {
+      // we'll know its the right one because the datum should match the expected value
+      const expectedDatum : string = State.Initial(8n - (BigInt(position)), merkleRoot); 
+      return utxo.datum === expectedDatum;
+    })
+
+    assertExists(uninitializedUtxo, "should have found the uninitialized tokensutxo");
+
+    const tx = await lucid.newTx()
+      .collectFrom(
+        [uninitializedUtxo],
+        SpendAction.InitializePublicKeyChunk(merkleProof, BigInt(position), leafHash),
+      )
+      .attach.SpendingValidator(validator)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: newInitialState },
+        testState.assetsToInitialize,
+      )
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: State.PreparedPublicKeyChunk(BigInt(position), publicKeyChunk) },
+        { [unitToSpend]: 1n },
+      )
+      .complete();
+
+    const signed = await tx.sign.withWallet().complete();
+    const txHash = await signed.submit();
+
+    await lucid.awaitTx(txHash);
+  };
+
+  // skip zero because it's already initialized
+  await initialize(1);
+  await initialize(2);
+  await initialize(3);
+  await initialize(4);
+  await initialize(5);
+  await initialize(6);
+  // await initialize(7);
+});

@@ -80,8 +80,6 @@ class MultiStepLamport extends Lamport {
 
     for (let i = 0; i < 8; i++) {
         const part : LamportKeyChunk = publicKeyParts[i];
-        console.log(`%c NOT FLAT ${JSON.stringify([part[0].map(toHex), part[1].map(toHex)], null, 2)}`, "color: red; font-weight: bold;");
-        console.log(`%cFLAT ${JSON.stringify(part.flat().map(toHex), null, 2)}`, "color: hotpink; font-weight: bold;");
         const flat = concatMany(part.flat());
 
         const hash = await sha256(flat);
