@@ -1,11 +1,12 @@
 use aiken/collection/dict.{Dict}
 use aiken/collection/list
 use cardano/assets.{PolicyId, AssetName}
-use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction}
+use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction, Input}
 use cardano/address.{Script}
 use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/builtin
+
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
 pub type MintAction {
@@ -78,6 +79,40 @@ pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bo
   }
 }
 
+const eight = bytearray.from_string(int.to_string(8))
+
+pub fn check_remaining_uninitialized(
+  outputs : List<Output>, 
+  policy_id : PolicyId, 
+  expected_asset_name : AssetName, 
+  uninitialized_tokens_input : Input,
+  original_merkle_root : ByteArray,
+  original_tokens_not_initalized : Int,
+   ) -> Bool {
+  let outputs_with_policy_tokens = list.filter(outputs, fn(output) {
+      False == (output.value 
+        |> assets.tokens(policy_id) 
+        |> dict.is_empty())
+  })
+  expect Some(remaining_uninitialized_output) = list.find(outputs_with_policy_tokens, fn(output) {
+    // get the one that doesn't have the expected asset name
+    0 == assets.quantity_of(output.value, policy_id, expected_asset_name)
+  })
+  expect InlineDatum(next_raw_uninitialized_datum) = remaining_uninitialized_output.datum
+  expect Initial(tokens_not_initalized, public_key_merkle_root) = next_raw_uninitialized_datum
+
+  and {
+    // uninitialized tokens must go to same address
+    remaining_uninitialized_output.address == uninitialized_tokens_input.output.address,
+    // there must be 2 outputs with policy id tokens
+    list.length(outputs_with_policy_tokens) == 2,
+    // counter on remaining uninitialized output must be 1 less than counter on input
+    tokens_not_initalized == original_tokens_not_initalized - 1,
+    // merkle root must be unchanged
+    public_key_merkle_root == original_merkle_root,
+  }
+}
+
 validator manysteplamport(_version: Int) {
   spend(
     datum: Option<State>,
@@ -99,26 +134,24 @@ validator manysteplamport(_version: Int) {
         expect Script(locked_script) = uninitialized_tokens_input.output.address.payment_credential
         let policy_id = locked_script
 
-
         expect Initial(tokens_not_initalized, public_key_merkle_root) = state 
-        // expect InlineDatum(input_datum) = uninitialized_tokens_input.output.datum
-        // expect Initial(tokens_not_initalized, public_key_merkle_root) = input_datum
      
         // find the output with the initialized token
         let expected_asset_name = bytearray.from_string(int.to_string(position + 1))
         expect Some(initialized_output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
 
-        // find the output with the remaining un-intialized tokens
-
-        // find the merkle root form the datum on the input with the un-initialized tokens
-
         and {
-          // the merkle root from the input datum matches the one on the output with the un-initialized tokens
-          // the counter on that output datum is 1 less than the counter on the input datum
-          True,
-          True,
-          // builtin.serialise_data(state) == builtin.serialise_data(input_datum),
+          // TODO: make sure initialized_output contains a public key chunk in the datum
+          // TODO: validate merkle proof
 
+          // position is correctly specified
+          tokens_not_initalized == 8 - position, 
+          or {
+            // if looking at the last token we will not create a new "uninitialized" output
+            expected_asset_name == eight,
+            // otherwise we need to ensure the new uninitialized output is properly formed
+            check_remaining_uninitialized(outputs, policy_id, expected_asset_name, uninitialized_tokens_input, public_key_merkle_root, tokens_not_initalized),
+          }
         }
       }
       VerifySignatureChunk ->
