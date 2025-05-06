@@ -25,7 +25,7 @@ import {
 } from "@std/assert";
 import { generateSeed } from "./Lamport.ts";
 import { Redeemer, toHex } from "npm:@blaze-cardano/core";
-import { MultiStepLamport } from "./MultiStepLamport.ts";
+import { LamportPublicKeyChunk, MultiStepLamport } from "./MultiStepLamport.ts";
 import { MerkleTree } from "./MerkleTree.ts";
 
 // Setup test accounts
@@ -75,7 +75,12 @@ const State = {
     Data.to(
       new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)]),
     ),
-  Default: () => new Constr(1, []),
+  PreparedPublicKeyChunk: (chunkPosition: bigint, chunk: LamportPublicKeyChunk) => 
+    Data.to(new Constr(1, [
+      chunkPosition, 
+      new Constr(0, [chunk[0].map(toHex), chunk[1].map(toHex)])
+    ])),
+  Default: () => new Constr(2, []),
 };
 
 const SpendAction = {
@@ -233,7 +238,8 @@ Deno.test("Initalize the first public key chunk", async () => {
   // remove unit to spend from assetsToInitialize
   delete testState.assetsToInitialize[unitToSpend];
 
-  const PartialPublicKeyDatum = Data.void();
+  const publicKeyParts = await testState.msLamport.publicKeyParts();
+  const firstPublicKeyChunk = publicKeyParts[0];
 
   const tx = await lucid.newTx()
     .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleRoot, 0n))
@@ -245,7 +251,7 @@ Deno.test("Initalize the first public key chunk", async () => {
     )
     .pay.ToContract(
       scriptAddress,
-      { kind: "inline", value: PartialPublicKeyDatum },
+      { kind: "inline", value: State.PreparedPublicKeyChunk(0n, firstPublicKeyChunk)},
       { [unitToSpend]: 1n },
     )
     .complete();

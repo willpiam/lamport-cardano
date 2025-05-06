@@ -28,9 +28,14 @@ pub type SpendAction {
 // pub type SpendRedeemer {
 //   action: SpendAction,
 // }
+pub type PublicKeyChunk {
+  pk_left: List<ByteArray>,
+  pk_right: List<ByteArray>,
+}
 
 pub type State {
   Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
+  PreparedPublicKeyChunk {chunk_position: Int, chunk: PublicKeyChunk}
   Default
 }
 
@@ -139,13 +144,23 @@ validator manysteplamport(_version: Int) {
         // find the output with the initialized token
         let expected_asset_name = bytearray.from_string(int.to_string(position + 1))
         expect Some(initialized_output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
+        expect InlineDatum(initialized_datum) = initialized_output.datum
+        expect PreparedPublicKeyChunk {chunk_position, chunk} = initialized_datum
+
+        let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
 
         and {
           // TODO: make sure initialized_output contains a public key chunk in the datum
           // TODO: validate merkle proof
-
+          // chunk is the expected shape
+          list.length(chunk.pk_left) == 32,
+          list.length(chunk.pk_right) == 32,
+          // all chunk elements must be unique
+          list.length(list.unique(chunk_elements)) == list.length(chunk_elements),
           // position is correctly specified
           tokens_not_initalized == 8 - position, 
+          // chunk position must be accurate
+          chunk_position == position,
           or {
             // if looking at the last token we will not create a new "uninitialized" output
             expected_asset_name == eight,
