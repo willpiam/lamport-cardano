@@ -148,6 +148,14 @@ pub fn check_remaining_uninitialized(
   }
 }
 
+pub fn hash_chunk(chunk : PublicKeyChunk) -> ByteArray {
+  let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
+  let flat_chunk = list.reduce(chunk_elements, #[], fn(acc, curr) {
+    bytearray.concat(acc, curr)
+  })
+  sha2_256(flat_chunk)
+}
+
 validator manysteplamport(_version: Int) {
   spend(
     datum: Option<State>,
@@ -180,6 +188,7 @@ validator manysteplamport(_version: Int) {
 
         and {
           // leaf_hash must be the hash of the chunk
+          leaf_hash == hash_chunk(chunk),
           // validate merkle proof
           verify_merkle_proof(public_key_merkle_root, merkle_proof, leaf_hash),
           // the initialized output must be on the same address (this validator)
