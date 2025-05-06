@@ -6,6 +6,7 @@ use cardano/address.{Script}
 use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/builtin
+use aiken/crypto.{sha2_256}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
@@ -19,13 +20,37 @@ pub type ProofNode {
   sibling_on_left: Bool,
 }
 
+pub fn recursive_verify_merkle_proof(current: ByteArray, remaining: List<ProofNode>) -> ByteArray {
+  when list.is_empty(remaining) is {
+    True -> current
+    False -> {
+      expect Some(head) = list.head(remaining)
+      let ProofNode { hash: sibling, sibling_on_left } = head
+
+      let parent = if sibling_on_left {
+        sha2_256(bytearray.concat(sibling, current))
+      } else {
+        sha2_256(bytearray.concat(current, sibling))
+      }
+
+      expect Some(rest) = list.tail(remaining)
+      recursive_verify_merkle_proof(parent, rest)
+    }
+  }
+}
+
+pub fn verify_merkle_proof(root: ByteArray, proof: List<ProofNode>, leaf_hash: ByteArray) -> Bool {
+  let derived_root = recursive_verify_merkle_proof(leaf_hash, proof)
+  root == derived_root
+}
+
 // pub type MintRedeemer {
 //   action: MintAction,
 //   root: ByteArray,
 // }
 
 pub type SpendAction {
-  InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int}
+  InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
   VerifySignatureChunk
   VerifyFullSignature
 }
@@ -134,7 +159,7 @@ validator manysteplamport(_version: Int) {
     expect Some(state) = datum
 
     when action is {
-      InitializePublicKeyChunk { merkle_proof, position } -> {
+      InitializePublicKeyChunk { merkle_proof, position, leaf_hash } -> {
         // send 1 token back to this validator on an output with a public key chunk which fits in the merkle tree
         // send the rest of the tokens to the same validator but on a single output
 
@@ -154,7 +179,9 @@ validator manysteplamport(_version: Int) {
         let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
 
         and {
-          // TODO: validate merkle proof
+          // leaf_hash must be the hash of the chunk
+          // validate merkle proof
+          verify_merkle_proof(public_key_merkle_root, merkle_proof, leaf_hash),
           // the initialized output must be on the same address (this validator)
           initialized_output.address == uninitialized_tokens_input.output.address,
           // chunk is the expected shape

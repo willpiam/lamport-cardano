@@ -94,7 +94,7 @@ const Bool = {
 const ProofNodeData = (proofNode : ProofNode) => new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? Bool.True : Bool.False]);
 // const ProofNodeData = (proofNode : ProofNode) => new Constr(0, [toHex(proofNode.hash), proofNode.siblingOnLeft ? 1n:0n]);
 const SpendAction = {
-  InitializePublicKeyChunk: (merkleProof : ProofNode[], position : bigint) => Data.to(new Constr(0, [merkleProof.map(ProofNodeData), position])),
+  InitializePublicKeyChunk: (merkleProof : ProofNode[], position : bigint, leafHash : Uint8Array) => Data.to(new Constr(0, [merkleProof.map(ProofNodeData), position, toHex(leafHash)])),
   VerifySignatureChunk: Data.to(new Constr(1, [])),
   VerifyFullSignature: Data.to(new Constr(2, [])),
 };
@@ -194,6 +194,7 @@ Deno.test("Mint our 8 tokens", async () => {
   const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
   const initialState = State.Initial(8n, merkleRoot);
   console.log(`Initial state: ${initialState}`);
+  console.log(`%cInitial root:  ${toHex(merkleRoot)}`, "color: hotpink; font-weight: bold;");
 
   {
     const scriptUtxos = await lucid.utxosAt(scriptAddress);
@@ -243,6 +244,10 @@ Deno.test("Initalize the first public key chunk", async () => {
   assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
   const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
   const merkleProof : ProofNode[] = testState.msLamport.publicKeyMerkleProof(0);
+  console.log(`%cMerkle proof:  ${merkleProof.map(p => toHex(p.hash)).join(", ")}`, "color: hotpink; font-weight: bold;");
+  const leafHash = testState.msLamport.chunkLeafHash(0);
+  console.log(`%cLeaf hash: ${toHex(leafHash)}`, "color: purple; font-weight: bold;");
+
   const newInitialState = State.Initial(7n, merkleRoot);
 
   const unitToSpend = policyId + fromText("1");
@@ -253,7 +258,7 @@ Deno.test("Initalize the first public key chunk", async () => {
   const firstPublicKeyChunk = publicKeyParts[0];
 
   const tx = await lucid.newTx()
-    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleProof, 0n))
+    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleProof, 0n, leafHash))
     .attach.SpendingValidator(validator)
     .pay.ToContract(
       scriptAddress, 

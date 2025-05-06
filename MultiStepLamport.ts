@@ -59,6 +59,14 @@ class MultiStepLamport extends Lamport {
     return this.publicKeyMerkleTree.getProofByIndex(index);
   }
 
+  chunkLeafHash(index : number): Uint8Array {
+    if (this.publicKeyMerkleTree === null) {
+      throw new Error("Merkle tree does not yet exist");
+    }
+
+    return this.publicKeyMerkleTree.getLeafAt(index);
+  }
+
   /*
 
   */
@@ -73,7 +81,6 @@ class MultiStepLamport extends Lamport {
     for (let i = 0; i < 8; i++) {
         const part : LamportKeyChunk = publicKeyParts[i];
         const flat = concatMany(part.flat());
-        console.log(`Part ${i}. `, toHex(flat));
 
         const hash = await sha256(flat);
         publicKeyPartsHashes.push(hash);

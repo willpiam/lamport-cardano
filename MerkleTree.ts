@@ -35,6 +35,10 @@ export class MerkleTree {
     this.data = hashedLeaves.slice();
   }
 
+  getLeafAt(index: number): Uint8Array {
+    return this.data[index];
+  }
+
   /** Number of leaves supplied to the constructor. */
   get leafCount(): number {
     return this.data.length;
@@ -61,7 +65,7 @@ export class MerkleTree {
             acc.push(sha256(concat(current[i], current[i + 1])));
           }
           return acc;
-        }, [])
+        }, []),
       );
 
       // Prepend parents so that layers[0] is always the root.
@@ -113,7 +117,7 @@ export class MerkleTree {
    */
   getProofByLeafHash(leafHash: Uint8Array): ProofNode[] {
     const leafLayer = this.layers[this.layers.length - 1];
-    const idx = leafLayer.findIndex(h => toHex(h) === toHex(leafHash));
+    const idx = leafLayer.findIndex((h) => toHex(h) === toHex(leafHash));
     assert(idx !== -1, "Leaf hash not found");
     return this.getProofByIndex(idx);
   }
@@ -122,19 +126,45 @@ export class MerkleTree {
    * Verifies that a leaf hash is included under `root` given its `proof`.
    * `leafHash` must be the same hash stored in the tree’s leaf layer.
    */
+  // async verifyProof(
+  //   leafHash: Uint8Array,
+  //   proof: ProofNode[],
+  //   root: Uint8Array
+  // ): Promise<boolean> {
+  //   let hash = leafHash;
+
+  //   for (const { hash: siblingHash, siblingOnLeft } of proof) {
+  //     hash = siblingOnLeft
+  //       ? await sha256(concat(siblingHash, hash))
+  //       : await sha256(concat(hash, siblingHash));
+  //   }
+
+  //   return toHex(hash) === toHex(root);
+  // }
   async verifyProof(
     leafHash: Uint8Array,
-    proof: ProofNode[],
-    root: Uint8Array
+    proof: readonly ProofNode[],
+    root: Uint8Array,
   ): Promise<boolean> {
-    let hash = leafHash;
+    // Inner tail‑recursive helper
+    const compute = async (
+      current: Uint8Array,
+      remaining: readonly ProofNode[],
+    ): Promise<Uint8Array> => {
+      if (remaining.length === 0) {
+        return current; // recursion base‑case: reached the root
+      }
 
-    for (const { hash: siblingHash, siblingOnLeft } of proof) {
-      hash = siblingOnLeft
-        ? await sha256(concat(siblingHash, hash))
-        : await sha256(concat(hash, siblingHash));
-    }
+      const [{ hash: sibling, siblingOnLeft }, ...rest] = remaining;
 
-    return toHex(hash) === toHex(root);
+      const parent = siblingOnLeft
+        ? await sha256(concat(sibling, current))
+        : await sha256(concat(current, sibling));
+
+      return compute(parent, rest); // recurse with the newly‑derived hash
+    };
+
+    const derivedRoot = await compute(leafHash, proof);
+    return toHex(derivedRoot) === toHex(root);
   }
 }
