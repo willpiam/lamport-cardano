@@ -14,13 +14,18 @@ pub type MintAction {
   Burn
 }
 
+pub type ProofNode {
+  hash: ByteArray,
+  sibling_on_left: Bool,
+}
+
 // pub type MintRedeemer {
 //   action: MintAction,
 //   root: ByteArray,
 // }
 
 pub type SpendAction {
-  InitializePublicKeyChunk {merkle_proof: ByteArray, position: Int}
+  InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int}
   VerifySignatureChunk
   VerifyFullSignature
 }

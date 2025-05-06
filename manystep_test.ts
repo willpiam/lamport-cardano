@@ -26,7 +26,7 @@ import {
 import { generateSeed } from "./Lamport.ts";
 import { Redeemer, toHex } from "npm:@blaze-cardano/core";
 import { LamportPublicKeyChunk, MultiStepLamport } from "./MultiStepLamport.ts";
-import { MerkleTree } from "./MerkleTree.ts";
+import { MerkleTree, ProofNode } from "./MerkleTree.ts";
 
 // Setup test accounts
 const alice = generateEmulatorAccount({
@@ -83,8 +83,18 @@ const State = {
   Default: () => new Constr(2, []),
 };
 
+const Bool = {
+  False: new Constr(0, []),
+  True: new Constr(1, []),
+}
+
+// const constructorN = (n : number) => Data.to(new Constr(n, []));
+// const ProofNodeData = (proofNode : ProofNode) => Data.to(new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? 1n:0n]));
+// const ProofNodeData = (proofNode : ProofNode) => Data.to(new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? Bool.True : Bool.False]));
+const ProofNodeData = (proofNode : ProofNode) => new Constr(0, [toHex(proofNode.hash),  proofNode.siblingOnLeft ? Bool.True : Bool.False]);
+// const ProofNodeData = (proofNode : ProofNode) => new Constr(0, [toHex(proofNode.hash), proofNode.siblingOnLeft ? 1n:0n]);
 const SpendAction = {
-  InitializePublicKeyChunk: (merkleProof : Uint8Array, position : bigint) => Data.to(new Constr(0, [toHex(merkleProof), position])),
+  InitializePublicKeyChunk: (merkleProof : ProofNode[], position : bigint) => Data.to(new Constr(0, [merkleProof.map(ProofNodeData), position])),
   VerifySignatureChunk: Data.to(new Constr(1, [])),
   VerifyFullSignature: Data.to(new Constr(2, [])),
 };
@@ -232,6 +242,7 @@ Deno.test("Initalize the first public key chunk", async () => {
 
   assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
   const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
+  const merkleProof : ProofNode[] = testState.msLamport.publicKeyMerkleProof(0);
   const newInitialState = State.Initial(7n, merkleRoot);
 
   const unitToSpend = policyId + fromText("1");
@@ -242,7 +253,7 @@ Deno.test("Initalize the first public key chunk", async () => {
   const firstPublicKeyChunk = publicKeyParts[0];
 
   const tx = await lucid.newTx()
-    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleRoot, 0n))
+    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleProof, 0n))
     .attach.SpendingValidator(validator)
     .pay.ToContract(
       scriptAddress, 

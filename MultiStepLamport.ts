@@ -1,6 +1,6 @@
 import { toHex } from "npm:@blaze-cardano/core";
 import { Lamport, LamportKey, LamportPrivateKey, LamportPublicKey, LamportSignature } from "./Lamport.ts";
-import { MerkleTree } from "./MerkleTree.ts";
+import { MerkleTree, ProofNode } from "./MerkleTree.ts";
 import { sha256 } from "./sha256.ts";
 type LamportSignatureChunk = LamportSignature; 
 type LamportKeyChunk = LamportKey;
@@ -49,6 +49,14 @@ class MultiStepLamport extends Lamport {
   async signToParts(message: Uint8Array): Promise<LamportSignatureChunk[]> {
     const signature = await super.sign(message);
     return breakSignatureIntoChunks(signature);
+  }
+
+  publicKeyMerkleProof(index : number): ProofNode[] {
+    if (this.publicKeyMerkleTree === null) {
+      throw new Error("Merkle tree does not yet exist");
+    }
+
+    return this.publicKeyMerkleTree.getProofByIndex(index);
   }
 
   /*
