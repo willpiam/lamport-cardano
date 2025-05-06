@@ -27,10 +27,11 @@ import { generateSeed } from "./Lamport.ts";
 import { Redeemer, toHex } from "npm:@blaze-cardano/core";
 import { LamportPublicKeyChunk, MultiStepLamport } from "./MultiStepLamport.ts";
 import { MerkleTree, ProofNode } from "./MerkleTree.ts";
+import { sha256 } from "./sha256.ts";
 
 // Setup test accounts
 const alice = generateEmulatorAccount({
-  lovelace: 100_000_000n, // 100 ada
+  lovelace: 1_000_000_000n, // 1,000 ada
 });
 
 const emulator = new Emulator([alice]);
@@ -85,7 +86,11 @@ const State = {
         new Constr(0, [chunk[0].map(toHex), chunk[1].map(toHex)]),
       ]),
     ),
-  Default: () => new Constr(2, []),
+  SignedMessageChunk: (messagePosition: bigint, messageChunk: Uint8Array) =>
+    Data.to(
+      new Constr(2, [messagePosition, toHex(messageChunk)]),
+    ),
+  Default: () => new Constr(3, []),
 };
 
 const Bool = {
@@ -115,7 +120,7 @@ const SpendAction = {
         toHex(leafHash),
       ]),
     ),
-  VerifySignatureChunk: Data.to(new Constr(1, [])),
+  VerifySignatureChunk: (signatureChunk: Uint8Array[]) => Data.to(new Constr(1, [signatureChunk.map(toHex)])),
   VerifyFullSignature: Data.to(new Constr(2, [])),
 };
 
@@ -206,10 +211,12 @@ Deno.test("Off-chain Merkle tree", async () => {
 type TestState = {
   msLamport: MultiStepLamport | null;
   assetsToInitialize: Assets | null;
+  message : string | null;
 };
 const testState: TestState = {
   msLamport: null,
   assetsToInitialize: null,
+  message: null,
 };
 testState.assetsToInitialize = assetsToMint;
 
@@ -347,6 +354,7 @@ Deno.test("Initialize the other public key chunks", async () => {
     
     assertExists(testState.assetsToInitialize, "The assetsToInitialize should be initialized at this point in the test");
     delete testState.assetsToInitialize[unitToSpend];
+    // console.log(`%cAssets to initialize after this one: ${JSON.stringify(Object.keys(testState.assetsToInitialize), null, 2)}`, "color: pink");
   
     const publicKeyParts = await testState.msLamport.publicKeyParts();
     const publicKeyChunk = publicKeyParts[position];
@@ -391,5 +399,76 @@ Deno.test("Initialize the other public key chunks", async () => {
   await initialize(4);
   await initialize(5);
   await initialize(6);
-  // await initialize(7);
+  await initialize(7);
+});
+
+/*
+  All of the public key chunks have been initialized. The entier lamport public key is now
+  on-chain, stored over 8 outputs.
+
+  We now need to decide what to sign. In later experiments we will sign the hash of some 
+  "representation of the transaction". This is will not the typical tx hash because our
+  signature is going in the redeemer and would be included in the preimage of the tx hash.
+
+  For now we will be signing a simple english message.
+
+  When we sign the message we will need to break the signature into chunks and use each
+  chunk to spend an initialized token. Spending this token enforces that the signature match
+  the message chunk (located in the new datum) and the public key chunk (located in the spent datum).
+
+  Once all the tokens have been spent like this they will point to a datum with much less data 
+  than in the previous state. This datum will only contain a chunk of the message (1/8th of 
+  the hashed message) and its position. 
+
+  After that to verify the signature we ensure the 8 chunks are present, concatinate their message
+  chunks in order depending on their position value and compare the result with the hashed message.
+  If they are the same we know the message was signed. 
+*/
+
+Deno.test("Sign a message", async () => {
+  assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+  testState.message = "Hello, world!";
+
+  const message = new TextEncoder().encode(testState.message);
+  const messageHash = await sha256(message);
+  console.log(`Message hash: ${toHex(messageHash)}`);
+
+  const signatureParts = await testState.msLamport.signToParts(messageHash);
+  const publicKeyParts = await testState.msLamport.publicKeyParts();
+  assert(await MultiStepLamport.verifyFromParts(messageHash, signatureParts, publicKeyParts), "The signature should be valid");
+});
+
+Deno.test("Sign and verify first message chunk", async () => {
+  assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+  testState.message = "Hello, world!";
+
+  const message = new TextEncoder().encode(testState.message);
+  const messageHash = await sha256(message);
+  console.log(`Message hash: ${toHex(messageHash)}`);
+  console.log(`Message hash length ${messageHash.length}`);
+
+  const signatureParts = await testState.msLamport.signToParts(messageHash);
+  const publicKeyParts = await testState.msLamport.publicKeyParts();
+  assert(await MultiStepLamport.verifyFromParts(messageHash, signatureParts, publicKeyParts), "The signature should be valid");
+
+  const scriptUtxos = await lucid.utxosAtWithUnit(scriptAddress, policyId + fromText("1"));
+  assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
+
+  const firstFourBytes = messageHash.slice(0, 4);
+
+  const tx = await lucid.newTx()
+    .collectFrom(
+      scriptUtxos,
+      SpendAction.VerifySignatureChunk(signatureParts[0]),
+    )
+    .attach.SpendingValidator(validator)
+    .pay.ToContract(
+      scriptAddress,
+      // { kind: "inline", value: State.PreparedPublicKeyChunk(0n, publicKeyParts[0]) },
+      { kind: "inline", value: State.SignedMessageChunk(0n, firstFourBytes) },
+      { [policyId + fromText("1")]: 1n },
+    )
+    .complete();
+
+
 });

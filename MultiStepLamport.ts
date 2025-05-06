@@ -7,6 +7,7 @@ type LamportKeyChunk = LamportKey;
 type LamportPublicKeyChunk = LamportPublicKey;
 type LamportPrivateKeyChunk = LamportPrivateKey;
 
+
 const breakSignatureIntoChunks = (signature : LamportSignature) : LamportSignatureChunk[] => Array.from({ length: 8 }, (_, i) : Uint8Array[] => signature.slice(i * 32, (i + 1) * 32));
 
 const breakKeyIntoChunks = (key : LamportKey) : LamportKeyChunk[] => Array.from({ length: 8 }, (_, i) : [Uint8Array[], Uint8Array[]] => {

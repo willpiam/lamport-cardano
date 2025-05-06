@@ -51,7 +51,7 @@ pub fn verify_merkle_proof(root: ByteArray, proof: List<ProofNode>, leaf_hash: B
 
 pub type SpendAction {
   InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
-  VerifySignatureChunk
+  VerifySignatureChunk (List<ByteArray>)
   VerifyFullSignature
 }
 
@@ -66,6 +66,7 @@ pub type PublicKeyChunk {
 pub type State {
   Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
   PreparedPublicKeyChunk {chunk_position: Int, chunk: PublicKeyChunk}
+  SignedMessageChunk (Int, ByteArray)
   Default
 }
 
@@ -210,9 +211,28 @@ validator manysteplamport(_version: Int) {
           }
         }
       }
-      VerifySignatureChunk ->
+      VerifySignatureChunk(signature_chunk) -> {
         // verify a chunk of a signature against a chunk of the message hash and a chunk of the public key
-        True
+        expect PreparedPublicKeyChunk {chunk_position, chunk} = state
+
+        expect Some(public_key_chunk_input) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
+        let expected_asset_name = bytearray.from_string(int.to_string(chunk_position + 1))
+        expect Script(policy_id) = public_key_chunk_input.output.address.payment_credential
+
+        expect Some(output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
+        expect InlineDatum(output_datum) = output.datum
+        expect SignedMessageChunk(message_position, message_chunk) = output_datum
+
+        and {
+          // new state must maintain the previous position
+          message_position == chunk_position,
+          // message chunk is of expected size
+          4 == bytearray.length(message_chunk),
+          // output value must have the expected token
+          1 == assets.quantity_of(output.value, policy_id, expected_asset_name),
+          // TODO: verify the signature chunk (lamport)
+        }
+      }
       VerifyFullSignature ->
         // verify the full signature... all 8 tokens are present
         // concatinate all the chunks from the message hash and verify it equals the expected value
