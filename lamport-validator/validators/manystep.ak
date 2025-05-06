@@ -4,7 +4,8 @@ use cardano/assets.{PolicyId, AssetName}
 use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction}
 use cardano/address.{Script}
 use aiken/primitive/bytearray
-
+use aiken/primitive/int
+use aiken/builtin
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
 pub type MintAction {
@@ -18,7 +19,7 @@ pub type MintAction {
 // }
 
 pub type SpendAction {
-  InitializePublicKeyChunk
+  InitializePublicKeyChunk {merkle_proof: ByteArray, position: Int}
   VerifySignatureChunk
   VerifyFullSignature
 }
@@ -47,6 +48,22 @@ pub fn find_output_with_tokens(
       )
 }
 
+pub fn find_output_with_asset(policy_id : PolicyId, asset_name : AssetName, outputs : List<Output>) -> Option<Output> {
+  outputs
+    |> list.find(
+        fn(output) {
+          let amount = output.value
+            |> assets.tokens(policy_id)
+            |> dict.get(asset_name)
+
+          when amount is {
+            Some(1) -> True
+            _ -> False
+          }
+        },
+      )
+}
+
 pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bool {
   /// names must be '1', '2', '3', '4', '5', '6', '7', '8'
   and {
@@ -63,16 +80,47 @@ pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bo
 
 validator manysteplamport(_version: Int) {
   spend(
-    datum: Option<Data>,
+    datum: Option<State>,
     action: SpendAction,
-    _utxo: OutputReference,
-    _self: Transaction,
+    target_input_reference: OutputReference,
+    self: Transaction,
   ) {
+    let Transaction { inputs, outputs, .. } = self
+    expect Some(state) = datum
+
+
     when action is {
-      InitializePublicKeyChunk ->
+      InitializePublicKeyChunk { merkle_proof, position } -> {
         // send 1 token back to this validator on an output with a public key chunk which fits in the merkle tree
         // send the rest of the tokens to the same validator but on a single output
-        True
+
+        // find the policy id
+        expect Some(uninitialized_tokens_input) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
+        expect Script(locked_script) = uninitialized_tokens_input.output.address.payment_credential
+        let policy_id = locked_script
+
+
+        expect Initial(tokens_not_initalized, public_key_merkle_root) = state 
+        // expect InlineDatum(input_datum) = uninitialized_tokens_input.output.datum
+        // expect Initial(tokens_not_initalized, public_key_merkle_root) = input_datum
+     
+        // find the output with the initialized token
+        let expected_asset_name = bytearray.from_string(int.to_string(position + 1))
+        expect Some(initialized_output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
+
+        // find the output with the remaining un-intialized tokens
+
+        // find the merkle root form the datum on the input with the un-initialized tokens
+
+        and {
+          // the merkle root from the input datum matches the one on the output with the un-initialized tokens
+          // the counter on that output datum is 1 less than the counter on the input datum
+          True,
+          True,
+          // builtin.serialise_data(state) == builtin.serialise_data(input_datum),
+
+        }
+      }
       VerifySignatureChunk ->
         // verify a chunk of a signature against a chunk of the message hash and a chunk of the public key
         True

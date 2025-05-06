@@ -79,7 +79,7 @@ const State = {
 };
 
 const SpendAction = {
-  InitializePublicKeyChunk: Data.to(new Constr(0, [])),
+  InitializePublicKeyChunk: (merkleProof : Uint8Array, position : bigint) => Data.to(new Constr(0, [toHex(merkleProof), position])),
   VerifySignatureChunk: Data.to(new Constr(1, [])),
   VerifyFullSignature: Data.to(new Constr(2, [])),
 };
@@ -236,7 +236,7 @@ Deno.test("Initalize the first public key chunk", async () => {
   const PartialPublicKeyDatum = Data.void();
 
   const tx = await lucid.newTx()
-    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk)
+    .collectFrom(scriptUtxos, SpendAction.InitializePublicKeyChunk(merkleRoot, 0n))
     .attach.SpendingValidator(validator)
     .pay.ToContract(
       scriptAddress, 
@@ -254,9 +254,5 @@ Deno.test("Initalize the first public key chunk", async () => {
   const txHash = await signed.submit();
 
   await lucid.awaitTx(txHash);
-
-
-
-
 
 })
