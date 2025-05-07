@@ -90,7 +90,7 @@ const State = {
     Data.to(
       new Constr(2, [messagePosition, toHex(messageChunk)]),
     ),
-  Default: () => new Constr(3, []),
+  Default: () => Data.to(new Constr(3, [])),
 };
 
 const Bool = {
@@ -467,11 +467,97 @@ Deno.test("Sign and verify first message chunk", async () => {
     .attach.SpendingValidator(validator)
     .pay.ToContract(
       scriptAddress,
-      // { kind: "inline", value: State.PreparedPublicKeyChunk(0n, publicKeyParts[0]) },
       { kind: "inline", value: State.SignedMessageChunk(0n, firstFourBytesOfMessageHash) },
       { [policyId + fromText("1")]: 1n },
     )
     .complete();
 
+  const signed = await tx.sign.withWallet().complete();
+  const txHash = await signed.submit();
 
+  await lucid.awaitTx(txHash);
 });
+
+/*
+  Now make the rest of the signature chunks
+*/
+Deno.test("Post the rest of the signature on-chain", async () => {
+  assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+  console.log(`Message:      ${testState.message}`);
+  assertExists(testState.message, "The message should be initialized at this point in the test");
+  const message = new TextEncoder().encode(testState.message);
+
+  const signatureParts = await testState.msLamport.signToParts(message);
+  const publicKeyParts = await testState.msLamport.publicKeyParts();
+  assert(await MultiStepLamport.verifyFromParts(message, signatureParts, publicKeyParts), "The signature should be valid");
+
+  const messageHash = await sha256(message);
+  console.log(`Message hash: ${toHex(messageHash)}`);
+
+  const postSignaturePart = async (position: number) => {
+    assert(position >= 0, "Position must be greater than or equal to 0");
+    assert(position < 8, "Position must be less than 8");
+
+    const scriptUtxos = await lucid.utxosAtWithUnit(scriptAddress, policyId + fromText(`${position + 1}`));
+    assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
+
+    const messageHashChunk = messageHash.slice(position * 4, (position + 1) * 4);
+    console.log(`Message hash chunk ${position}: ${toHex(messageHashChunk)}`);
+
+    const tx = await lucid.newTx()
+      .collectFrom(
+        scriptUtxos,
+        SpendAction.VerifySignatureChunk(signatureParts[position]),
+      )
+      .attach.SpendingValidator(validator)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: State.SignedMessageChunk(BigInt(position), messageHashChunk) },
+        { [policyId + fromText(`${position + 1}`)]: 1n },
+      )
+      .complete();
+
+    const signed = await tx.sign.withWallet().complete();
+    const txHash = await signed.submit();
+
+    await lucid.awaitTx(txHash);
+  }
+
+  await postSignaturePart(1);
+  await postSignaturePart(2);
+  await postSignaturePart(3);
+  await postSignaturePart(4);
+  await postSignaturePart(5);
+  await postSignaturePart(6);
+  await postSignaturePart(7);
+});
+
+
+/*
+  The eight tokens no longer have a public key on them. Instead they now each have a small piece of 
+  the message hash (4 bytes) and a position value.
+
+  The final step is to spend all of these tokens in a single transaction and piece together the message hash
+  before comparing it to the hash of the original message on-chain.
+*/
+
+Deno.test("Spend the tokens and verify the message", async () => {
+  
+  const scriptUtxos = await lucid.utxosAt(scriptAddress).then(
+    utxos => utxos.filter(
+      utxo => Object.keys(utxo.assets).some((asset) => asset.startsWith(policyId))
+    ));
+  
+  assertEquals(scriptUtxos.length, 8, "There should be 8 utxos on the script address at this point in the test");
+
+  const tx = await lucid.newTx()
+    .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature)
+    .attach.SpendingValidator(validator)
+    .pay.ToContract(
+      scriptAddress,
+      { kind: "inline", value: State.Default() },
+    )
+    .complete();
+  
+});
+

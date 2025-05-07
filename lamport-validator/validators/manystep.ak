@@ -206,10 +206,9 @@ validator manysteplamport(_version: Int) {
           // chunk position must be accurate
           chunk_position == position,
           // if we should have a new uninitialized output -> check for it
-          if position != 7 {
-            check_remaining_uninitialized(outputs, policy_id, expected_asset_name, uninitialized_tokens_input, public_key_merkle_root, tokens_not_initalized)
-          } else {
-            True
+          when position is {
+            7 -> True // we are initalizing the last tokens so we don't need a place to store the uninitialized tokens
+            _ -> check_remaining_uninitialized(outputs, policy_id, expected_asset_name, uninitialized_tokens_input, public_key_merkle_root, tokens_not_initalized)
           }
         }
       }
@@ -226,6 +225,8 @@ validator manysteplamport(_version: Int) {
         expect SignedMessageChunk(message_position, message_chunk) = output_datum
 
         and {
+          // signature chunk utxo must remain on the address of this validator
+          output.address == public_key_chunk_input.output.address,
           // public key chunk should be of expected size
           32 == list.length(pubkey_chunk.pk_left),
           32 == list.length(pubkey_chunk.pk_right),
@@ -239,8 +240,7 @@ validator manysteplamport(_version: Int) {
           4 == bytearray.length(message_chunk),
           // output value must have the expected token
           1 == assets.quantity_of(output.value, policy_id, expected_asset_name),
-          // WIP: verify the signature chunk (lamport)
-          // sanity_check_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
+          // verify the signature chunk (lamport)
           verify_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
         }
       }
