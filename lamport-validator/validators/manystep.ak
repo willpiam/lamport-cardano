@@ -53,7 +53,7 @@ pub fn verify_merkle_proof(root: ByteArray, proof: List<ProofNode>, leaf_hash: B
 pub type SpendAction {
   InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
   VerifySignatureChunk (List<ByteArray>)
-  VerifyFullSignature
+  VerifyFullSignature (ByteArray) // message
 }
 
 // pub type SpendRedeemer {
@@ -72,6 +72,17 @@ pub type State {
   Default
 }
 
+pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
+  expect SignedMessageChunk(left_position, left_chunk) = left
+  expect SignedMessageChunk(right_position, right_chunk) = right
+  if left_position < right_position {
+    Less
+  } else if left_position > right_position {
+    Greater
+  } else {
+    Equal
+  }
+}
 pub fn find_output_with_tokens(
   policy_id: PolicyId,
   outputs: List<Output>,
@@ -118,6 +129,9 @@ pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bo
 }
 
 const eight = bytearray.from_string(int.to_string(8))
+const expected_asset_names = list.map(list.range(1, 8), fn(i) { // can I do this at compile time?
+  bytearray.from_string(int.to_string(i))
+})
 
 pub fn check_remaining_uninitialized(
   outputs : List<Output>, 
@@ -244,10 +258,59 @@ validator manysteplamport(_version: Int) {
           verify_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
         }
       }
-      VerifyFullSignature ->
+      VerifyFullSignature(message) -> {
         // verify the full signature... all 8 tokens are present
         // concatinate all the chunks from the message hash and verify it equals the expected value
-        True
+
+        // let expected_asset_names = list.map(list.range(1, 8), fn(i) { // can I do this at compile time?
+        //   bytearray.from_string(int.to_string(i))
+        // })
+        
+        // the target input holds one of the 8 expected tokens but we don't know which one
+        // this is because this validator will be run once for each of the 8 inputs. From 
+        // the address of this input we can determine the policy id of the 8 tokens
+        expect Some(one_of_expected_inputs) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
+        expect Script(policy_id) = one_of_expected_inputs.output.address.payment_credential
+
+        // for each token find the output with that token
+        let outputs_with_tokens = list.map(expected_asset_names, fn(asset_name) {
+          expect Some(output) = find_output_with_asset(policy_id, asset_name, list.map(inputs, fn(input) { input.output }))
+          output
+        })
+
+        // for each of the outputs grab the datum
+        let parts = outputs_with_tokens 
+          |> list.map(fn(output) {
+            expect InlineDatum(output_datum) = output.datum
+            expect SignedMessageChunk(message_position, message_chunk) = output_datum
+            SignedMessageChunk(message_position, message_chunk)
+          }) 
+          |> list.sort(compare_signed_message_chunk)
+          |> list.map(fn(chunk)  {
+            expect SignedMessageChunk(_, part) = chunk
+            part
+          })
+        // let signed_message = list.reduce(chunks, #[], fn(acc : ByteArray , curr : State ) {
+        //   expect SignedMessageChunk(_, chunk) = curr
+        //   bytearray.concat(acc, chunk)
+        // })
+
+        // expect Some(SignedMessageChunk(head_position, _)) = list.head(chunks)
+
+        and {
+          // check lengths make sense
+          8 == list.length(outputs_with_tokens),
+          // 8 == list.length(chunks),
+          8 == list.length(parts),
+          // message in redeemer must match the constructed message
+          // bytearray.length(message) == bytearray.length(signed_message),
+          // the first chunk must be the first position
+          // head_position == 0,
+          // there must be at least 8 inputs (one for each token + whatever else the user is doing)
+          list.length(inputs) >= 8,
+          // TODO: must burn the 8 tokens
+        }
+      }
     }
   }
 

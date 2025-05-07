@@ -121,7 +121,7 @@ const SpendAction = {
       ]),
     ),
   VerifySignatureChunk: (signatureChunk: Uint8Array[]) => Data.to(new Constr(1, [signatureChunk.map(toHex)])),
-  VerifyFullSignature: Data.to(new Constr(2, [])),
+  VerifyFullSignature: (message: Uint8Array) => Data.to(new Constr(2, [toHex(message)])),
 };
 
 Deno.test("Off-chain multi-step lamport", async () => {
@@ -549,15 +549,25 @@ Deno.test("Spend the tokens and verify the message", async () => {
     ));
   
   assertEquals(scriptUtxos.length, 8, "There should be 8 utxos on the script address at this point in the test");
+  assertExists(testState.message, "The message should be initialized at this point in the test");
+
+  const message = new TextEncoder().encode(testState.message);
+
+  // const assetsToBurn = ["1", "2", "3", "4", "5", "6", "7", "8"]
+  const assetsToBurn = Array.from({length: 8}, (_, index) => `${1 + index}` ) 
+    .map(unit => policyId + fromText(unit))
+    .reduce((acc, unit) => ({ ...acc, [unit]: -1n }), {});
 
   const tx = await lucid.newTx()
-    .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature)
+    .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature(message))
     .attach.SpendingValidator(validator)
-    .pay.ToContract(
-      scriptAddress,
-      { kind: "inline", value: State.Default() },
-    )
+    .attach.MintingPolicy(mintingPolicy)
+    .mintAssets(assetsToBurn, MintAction.Burn)
     .complete();
-  
+
+  const signed = await tx.sign.withWallet().complete();
+  const txHash = await signed.submit();
+
+  await lucid.awaitTx(txHash);
 });
 
