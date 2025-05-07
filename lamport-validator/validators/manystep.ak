@@ -262,27 +262,13 @@ validator manysteplamport(_version: Int) {
         // verify the full signature... all 8 tokens are present
         // concatinate all the chunks from the message hash and verify it equals the expected value
 
-        // let expected_asset_names = list.map(list.range(1, 8), fn(i) { // can I do this at compile time?
-        //   bytearray.from_string(int.to_string(i))
-        // })
-        
         // the target input holds one of the 8 expected tokens but we don't know which one
         // this is because this validator will be run once for each of the 8 inputs. From 
         // the address of this input we can determine the policy id of the 8 tokens
         expect Some(one_of_expected_inputs) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
         expect Script(policy_id) = one_of_expected_inputs.output.address.payment_credential
-
-        // for each token find the output with that token
-        // let outputs_with_tokens = list.map(expected_asset_names, fn(asset_name) {
-        //   expect Some(output) = find_output_with_asset(policy_id, asset_name, list.map(inputs, fn(input) { input.output }))
-        //   output
-        // })
-
-        // for each of the outputs grab the datum
-        // let parts = outputs_with_tokens 
-        //   |> list.map(fn(output) {
-        // let parts = expected_asset_names 
-        let signed_message_hash = expected_asset_names 
+      
+        let signed_message_hash = expected_asset_names // "1", "2", "3", "4", "5", "6", "7", "8"
           |> list.map(fn(asset_name) {
             expect Some(output) = find_output_with_asset(policy_id, asset_name, list.map(inputs, fn(input) { input.output }))
             expect InlineDatum(output_datum) = output.datum
@@ -290,30 +276,23 @@ validator manysteplamport(_version: Int) {
             SignedMessageChunk(message_position, message_chunk)
           }) 
           |> list.sort(compare_signed_message_chunk)
-          |> list.map(fn(chunk)  {
+          |> list.map(fn(chunk)  { // todo: put this logic into the reduce step so we can do one less pass
             expect SignedMessageChunk(_, part) = chunk
             part
           })
           |> list.reduce(#[], bytearray.concat)
 
-        // let signed_message_hash = list.reduce(parts, #[], bytearray.concat)
-
-        // expect Some(SignedMessageChunk(head_position, _)) = list.head(chunks)
-
         and {
           // signed message hash must match the expected message hash
           signed_message_hash == sha2_256(message),
-          // check lengths make sense
-          // 8 == list.length(outputs_with_tokens),
-          // 8 == list.length(chunks),
-          // 8 == list.length(parts),
-          // message in redeemer must match the constructed message
-          // bytearray.length(message) == bytearray.length(signed_message),
-          // the first chunk must be the first position
-          // head_position == 0,
           // there must be at least 8 inputs (one for each token + whatever else the user is doing)
           list.length(inputs) >= 8,
-          // TODO: must burn the 8 tokens
+          // must burn the tokens
+          list.all(outputs, fn(output) { // no outputs contain tokens with the policy id
+            output.value 
+              |> assets.tokens(policy_id) 
+              |> dict.is_empty()
+          }),
         }
       }
     }
@@ -337,8 +316,6 @@ validator manysteplamport(_version: Int) {
 
         expect Script(locked_script) = output.address.payment_credential
         and {
-          True,
-          True,
           // none have been initialized yet
           tokens_not_initalized == 8,
           // merkle root length must be 32 bytes
@@ -351,14 +328,16 @@ validator manysteplamport(_version: Int) {
           has_expected_names_and_amounts(mint_dict),
         }
       }
-      Burn ->
-        and {
-          // all 8 tokens must be present
-          list.length(mint_list) == 8,
-          // TODO: must be entierly negative
-          // TODO: each token must have State redeemer made with the SignMessageChunk constructor
-          True,
-        }
+      Burn -> and {
+        // all 8 tokens must be present
+        list.length(mint_list) == 8,
+        // mint must be entierly negative
+        mint_list |> list.all(fn(token) {
+          expect Pair(_, amount) = token
+          amount == -1 
+        }),
+        // TODO (nope): each token must have State redeemer made with the SignMessageChunk constructor (actually this is already covered by the spend validators)
+      }
     }
   }
 
