@@ -7,7 +7,7 @@ use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/builtin
 use aiken/crypto.{sha2_256}
-use verify_lamport.{LamportPublicKey, verify_lamport, sanity_check_lamport}
+use verify_lamport.{LamportPublicKey, verify_lamport}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
