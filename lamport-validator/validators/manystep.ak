@@ -7,6 +7,7 @@ use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/builtin
 use aiken/crypto.{sha2_256}
+use verify_lamport.{LamportPublicKey, verify_lamport}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
@@ -58,15 +59,16 @@ pub type SpendAction {
 // pub type SpendRedeemer {
 //   action: SpendAction,
 // }
-pub type PublicKeyChunk {
-  pk_left: List<ByteArray>,
-  pk_right: List<ByteArray>,
-}
+// pub type PublicKeyChunk {
+//   pk_left: List<ByteArray>,
+//   pk_right: List<ByteArray>,
+// }
+pub type PublicKeyChunk = LamportPublicKey
 
 pub type State {
   Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
-  PreparedPublicKeyChunk {chunk_position: Int, chunk: PublicKeyChunk}
-  SignedMessageChunk (Int, ByteArray)
+  PreparedPublicKeyChunk (Int, PublicKeyChunk) // position, chunk
+  SignedMessageChunk (Int, ByteArray) // position, chunk
   Default
 }
 
@@ -183,7 +185,7 @@ validator manysteplamport(_version: Int) {
         let expected_asset_name = bytearray.from_string(int.to_string(position + 1))
         expect Some(initialized_output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
         expect InlineDatum(initialized_datum) = initialized_output.datum
-        expect PreparedPublicKeyChunk {chunk_position, chunk} = initialized_datum
+        expect PreparedPublicKeyChunk (chunk_position, chunk) = initialized_datum
 
         let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
 
@@ -213,10 +215,10 @@ validator manysteplamport(_version: Int) {
       }
       VerifySignatureChunk(signature_chunk) -> {
         // verify a chunk of a signature against a chunk of the message hash and a chunk of the public key
-        expect PreparedPublicKeyChunk {chunk_position, chunk} = state
+        expect PreparedPublicKeyChunk (pubkey_chunk_position, pubkey_chunk) = state
 
         expect Some(public_key_chunk_input) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
-        let expected_asset_name = bytearray.from_string(int.to_string(chunk_position + 1))
+        let expected_asset_name = bytearray.from_string(int.to_string(pubkey_chunk_position + 1))
         expect Script(policy_id) = public_key_chunk_input.output.address.payment_credential
 
         expect Some(output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
@@ -225,12 +227,13 @@ validator manysteplamport(_version: Int) {
 
         and {
           // new state must maintain the previous position
-          message_position == chunk_position,
+          message_position == pubkey_chunk_position,
           // message chunk is of expected size
           4 == bytearray.length(message_chunk),
           // output value must have the expected token
           1 == assets.quantity_of(output.value, policy_id, expected_asset_name),
-          // TODO: verify the signature chunk (lamport)
+          // WIP: verify the signature chunk (lamport)
+          verify_lamport(0, 1, message_chunk, pubkey_chunk, signature_chunk),
         }
       }
       VerifyFullSignature ->

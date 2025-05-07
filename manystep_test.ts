@@ -440,7 +440,8 @@ Deno.test("Sign a message", async () => {
 
 Deno.test("Sign and verify first message chunk", async () => {
   assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
-  testState.message = "Hello, world!";
+  testState.message = `Hello, world! ${Date.now()}`;
+  console.log(`Message:      ${testState.message}`);
 
   const message = new TextEncoder().encode(testState.message);
   const messageHash = await sha256(message);
@@ -454,7 +455,8 @@ Deno.test("Sign and verify first message chunk", async () => {
   const scriptUtxos = await lucid.utxosAtWithUnit(scriptAddress, policyId + fromText("1"));
   assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
 
-  const firstFourBytes = messageHash.slice(0, 4);
+  const firstFourBytesOfMessageHash = messageHash.slice(0, 4);
+  console.log(`First four bytes of message hash: ${toHex(firstFourBytesOfMessageHash)}`);
 
   const tx = await lucid.newTx()
     .collectFrom(
@@ -465,7 +467,7 @@ Deno.test("Sign and verify first message chunk", async () => {
     .pay.ToContract(
       scriptAddress,
       // { kind: "inline", value: State.PreparedPublicKeyChunk(0n, publicKeyParts[0]) },
-      { kind: "inline", value: State.SignedMessageChunk(0n, firstFourBytes) },
+      { kind: "inline", value: State.SignedMessageChunk(0n, firstFourBytesOfMessageHash) },
       { [policyId + fromText("1")]: 1n },
     )
     .complete();
