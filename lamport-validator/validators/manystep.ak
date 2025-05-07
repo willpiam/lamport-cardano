@@ -7,7 +7,7 @@ use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/builtin
 use aiken/crypto.{sha2_256}
-use verify_lamport.{LamportPublicKey, verify_lamport}
+use verify_lamport.{LamportPublicKey, verify_lamport, sanity_check_lamport}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
@@ -226,14 +226,22 @@ validator manysteplamport(_version: Int) {
         expect SignedMessageChunk(message_position, message_chunk) = output_datum
 
         and {
+          // public key chunk should be of expected size
+          32 == list.length(pubkey_chunk.pk_left),
+          32 == list.length(pubkey_chunk.pk_right),
+          // signature chunk should be of expected size
+          32 == list.length(signature_chunk),
           // new state must maintain the previous position
           message_position == pubkey_chunk_position,
+          message_position < 8,
+          message_position >= 0,
           // message chunk is of expected size
           4 == bytearray.length(message_chunk),
           // output value must have the expected token
           1 == assets.quantity_of(output.value, policy_id, expected_asset_name),
           // WIP: verify the signature chunk (lamport)
-          verify_lamport(0, 1, message_chunk, pubkey_chunk, signature_chunk),
+          // sanity_check_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
+          verify_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
         }
       }
       VerifyFullSignature ->

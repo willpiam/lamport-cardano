@@ -16,6 +16,15 @@ fn getelement(index : Int, msghash : ByteArray, lampub : LamportPublicKey) -> Op
   }
 }
 
+fn bizarro_getelement(index : Int, msghash : ByteArray, lampub : LamportPublicKey) -> Option<ByteArray> {
+  if (test_bit(msghash, index)) {
+    list.at(lampub.pk_left, index)
+  }
+  else {
+    list.at(lampub.pk_right, index)
+  }
+}
+
 pub fn verify_lamport(index : Int, finalindex : Int, msghash : ByteArray, lampub : LamportPublicKey, signature : List<ByteArray>) -> Bool {
   if (index == finalindex) {
     True
@@ -25,6 +34,23 @@ pub fn verify_lamport(index : Int, finalindex : Int, msghash : ByteArray, lampub
     expect Some(elementpreimage) = list.at(signature, index)
     if (pubel == sha2_256(elementpreimage)) {
       verify_lamport(index + 1, finalindex, msghash, lampub, signature)
+    }
+    else {
+      False
+    }
+  }
+}
+
+pub fn sanity_check_lamport(index : Int, finalindex : Int, msghash : ByteArray, lampub : LamportPublicKey, signature : List<ByteArray>) -> Bool {
+  if (index == finalindex) {
+    True
+  }
+  else {
+    expect Some(pubel) = getelement(index, msghash, lampub)
+    expect Some(bizarro_pubel) = bizarro_getelement(index, msghash, lampub)
+    expect Some(elementpreimage) = list.at(signature, index)
+    if (or { pubel == sha2_256(elementpreimage), bizarro_pubel == sha2_256(elementpreimage) }) {
+      sanity_check_lamport(index + 1, finalindex, msghash, lampub, signature)
     }
     else {
       False

@@ -78,7 +78,7 @@ Is there some way in which I can verify a lamport signature over multiple transa
 ## To Do (short terms items to return to)
 
 - [ ] make `lamport.ak` use `lib/verify_lamport.ak`
-
+- [ ] write a through series of tests for `Lamport.ts`
 
 
 ## Related Work

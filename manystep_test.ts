@@ -444,17 +444,18 @@ Deno.test("Sign and verify first message chunk", async () => {
   console.log(`Message:      ${testState.message}`);
 
   const message = new TextEncoder().encode(testState.message);
-  const messageHash = await sha256(message);
-  console.log(`Message hash: ${toHex(messageHash)}`);
-  console.log(`Message hash length ${messageHash.length}`);
+  // const messageHash = await sha256(message);
+  // console.log(`Message hash: ${toHex(messageHash)}`);
+  // console.log(`Message hash length ${messageHash.length}`);
 
-  const signatureParts = await testState.msLamport.signToParts(messageHash);
+  const signatureParts = await testState.msLamport.signToParts(message);
   const publicKeyParts = await testState.msLamport.publicKeyParts();
-  assert(await MultiStepLamport.verifyFromParts(messageHash, signatureParts, publicKeyParts), "The signature should be valid");
+  assert(await MultiStepLamport.verifyFromParts(message, signatureParts, publicKeyParts), "The signature should be valid");
 
   const scriptUtxos = await lucid.utxosAtWithUnit(scriptAddress, policyId + fromText("1"));
   assertEquals(scriptUtxos.length, 1, "There should be 1 utxo on the script address at this point in the test");
 
+  const messageHash = await sha256(message);
   const firstFourBytesOfMessageHash = messageHash.slice(0, 4);
   console.log(`First four bytes of message hash: ${toHex(firstFourBytesOfMessageHash)}`);
 
