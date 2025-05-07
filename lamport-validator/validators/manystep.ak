@@ -290,14 +290,13 @@ validator manysteplamport(_version: Int) {
             expect SignedMessageChunk(_, part) = chunk
             part
           })
-        // let signed_message = list.reduce(chunks, #[], fn(acc : ByteArray , curr : State ) {
-        //   expect SignedMessageChunk(_, chunk) = curr
-        //   bytearray.concat(acc, chunk)
-        // })
+        let signed_message_hash = list.reduce(parts, #[], bytearray.concat)
 
         // expect Some(SignedMessageChunk(head_position, _)) = list.head(chunks)
 
         and {
+          // signed message hash must match the expected message hash
+          signed_message_hash == sha2_256(message),
           // check lengths make sense
           8 == list.length(outputs_with_tokens),
           // 8 == list.length(chunks),
