@@ -8,7 +8,7 @@ use aiken/primitive/int
 use aiken/builtin
 use aiken/crypto.{sha2_256}
 use verify_lamport.{LamportPublicKey, verify_lamport}
-use merkle_proof.{ProofNode, verify_merkle_proof}
+use merkle.{ProofNode, verify_merkle_proof}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
@@ -19,7 +19,8 @@ pub type MintAction {
 }
 
 pub type SpendAction {
-  InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
+  // InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
+  InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
   VerifySignatureChunk (List<ByteArray>)
   VerifyFullSignature (ByteArray) // message
 }
@@ -27,7 +28,8 @@ pub type SpendAction {
 pub type PublicKeyChunk = LamportPublicKey
 
 pub type State {
-  Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
+  // Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
+  Initial (Int, ByteArray) // tokens not initalized, public key merkle root
   PreparedPublicKeyChunk (Int, PublicKeyChunk) // position, chunk
   SignedMessageChunk (Int, ByteArray) // position, chunk
   Default
@@ -145,7 +147,7 @@ validator manysteplamport(_version: Int) {
     expect Some(state) = datum
 
     when action is {
-      InitializePublicKeyChunk { merkle_proof, position, leaf_hash } -> {
+      InitializePublicKeyChunk (merkle_proof, position, leaf_hash) -> {
         // send 1 token back to this validator on an output with a public key chunk which fits in the merkle tree
         // send the rest of the tokens to the same validator but on a single output
 
