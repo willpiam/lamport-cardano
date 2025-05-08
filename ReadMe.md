@@ -88,6 +88,19 @@ Transaction count:
 
     18 transactions total
 
+### Primary files
+
+On-chain 
+
+- manystep.ak
+- lib/verify_lamport.ts
+- lib/merkle.ak
+
+off-chain
+
+- offchain_test.ts
+- MerkleTree.ts
+- MultiStepLamport.ts
 
 ## To Do (short terms items to return to)
 
