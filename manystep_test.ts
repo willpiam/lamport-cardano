@@ -167,6 +167,7 @@ Deno.test("Off-chain multi-step lamport", async () => {
 
   // get the merkle root
   const merkleRoot = await msLamport.publicKeyMerkleRoot();
+  assertEquals(merkleRoot.length, 32);
   console.log("Merkle root:", toHex(merkleRoot));
 });
 

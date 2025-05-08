@@ -1,11 +1,10 @@
-use aiken/collection/dict.{Dict}
+use aiken/collection/dict
 use aiken/collection/list
 use cardano/assets.{PolicyId, AssetName}
 use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction, Input}
 use cardano/address.{Script}
 use aiken/primitive/bytearray
 use aiken/primitive/int
-use aiken/builtin
 use aiken/crypto.{sha2_256}
 use verify_lamport.{LamportPublicKey, verify_lamport}
 use merkle.{ProofNode, verify_merkle_proof}
@@ -20,7 +19,7 @@ pub type MintAction {
 
 pub type SpendAction {
   InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
-  VerifySignatureChunk (List<ByteArray>)
+  VerifySignatureChunk (List<ByteArray>) // signature chunk
   VerifyFullSignature (ByteArray) // message
 }
 
@@ -33,8 +32,8 @@ pub type State {
 }
 
 pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
-  expect SignedMessageChunk(left_position, left_chunk) = left
-  expect SignedMessageChunk(right_position, right_chunk) = right
+  expect SignedMessageChunk(left_position, _) = left
+  expect SignedMessageChunk(right_position, _) = right
   if left_position < right_position {
     Less
   } else if left_position > right_position {
@@ -84,7 +83,7 @@ pub fn check_remaining_uninitialized(
     // uninitialized tokens must go to same address
     remaining_uninitialized_output.address == uninitialized_tokens_input.output.address,
     // there must be 2 outputs with policy id tokens
-    list.length(outputs_with_policy_tokens) == 2,
+    2 == list.length(outputs_with_policy_tokens),
     // counter on remaining uninitialized output must be 1 less than counter on input
     tokens_not_initalized == original_tokens_not_initalized - 1,
     // merkle root must be unchanged
@@ -138,8 +137,8 @@ validator manysteplamport(_version: Int) {
           // the initialized output must be on the same address (this validator)
           initialized_output.address == uninitialized_tokens_input.output.address,
           // chunk is the expected shape
-          list.length(chunk.pk_left) == 32,
-          list.length(chunk.pk_right) == 32,
+          32 == list.length(chunk.pk_left),
+          32 == list.length(chunk.pk_right),
           // all chunk elements must be unique
           list.length(list.unique(chunk_elements)) == list.length(chunk_elements),
           // position is correctly specified
@@ -226,7 +225,7 @@ validator manysteplamport(_version: Int) {
   }
 
   mint(action: MintAction, policy_id: PolicyId, self: Transaction) {
-    let Transaction { inputs, mint, outputs, .. } = self
+    let Transaction { mint, outputs, .. } = self
 
     let mint_dict = mint |> assets.tokens(policy_id)
     let mint_list = mint_dict |> dict.to_pairs()
@@ -271,7 +270,7 @@ validator manysteplamport(_version: Int) {
         list.length(mint_list) == 8,
         // mint must be entierly negative
         mint_list |> list.all(fn(token) {
-          expect Pair(_, amount) = token
+          let Pair(_, amount) = token
           amount == -1 
         }),
       }

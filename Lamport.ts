@@ -45,18 +45,6 @@ const keyToHex = (key: LamportKey): [string[], string[]] => {
     return [group1.map(toHex), group2.map(toHex)];
 }
 
-const compareKeys = (key1: LamportKey, key2: LamportKey, keyStrength : number): boolean => {
-    const hexKey1 = keyToHex(key1);
-    const hexKey2 = keyToHex(key2);
-
-    for (let i = 0; i < keyStrength; i++) 
-        if (hexKey1[0][i] !== hexKey2[0][i] || hexKey1[1][i] !== hexKey2[1][i]) 
-            return false;
-
-    return true;
-}
-
-
 class Lamport {
     initialSecret: Uint8Array;
     textEncoder: TextEncoder;
@@ -159,7 +147,6 @@ export {
     uint8ArrayToBinaryString,
     validateKey,
     keyToHex,
-    compareKeys,
     signatureToHex,
     type LamportKey,
     type LamportSignature,

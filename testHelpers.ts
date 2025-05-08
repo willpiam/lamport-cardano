@@ -49,17 +49,17 @@ export const binaryStringXor = (a: string, b: string) => {
   return aBytes.map((a, i) => a ^ bBytes[i]).join("");
 };
 
-export const burn = async (lucid: any, mintingPolicy: any, unit: string, amount: bigint) => {
-  const tx = await lucid
-    .newTx()
-    .attach.MintingPolicy(mintingPolicy)
-    .mintAssets({
-      [unit]: -amount,
-    })
-    .complete();
+// export const burn = async (lucid: any, mintingPolicy: any, unit: string, amount: bigint) => {
+//   const tx = await lucid
+//     .newTx()
+//     .attach.MintingPolicy(mintingPolicy)
+//     .mintAssets({
+//       [unit]: -amount,
+//     })
+//     .complete();
 
-  const signed = await tx.sign.withWallet().complete();
-  const txHash = await signed.submit();
+//   const signed = await tx.sign.withWallet().complete();
+//   const txHash = await signed.submit();
 
-  return txHash;
-}
+//   return txHash;
+// }

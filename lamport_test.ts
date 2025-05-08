@@ -18,11 +18,10 @@ import { generateSeed, Lamport, signatureToHex } from "./Lamport.ts";
 import { toHex } from "npm:@blaze-cardano/core";
 import {
   assertEquals,
-  assert,
   assertExists,
   assertRejects,
 } from "@std/assert";
-import { flipBitInSignature, toBinaryString, binaryStringXor, burn } from "./testHelpers.ts";
+import { flipBitInSignature, toBinaryString, binaryStringXor} from "./testHelpers.ts";
 
 const KEY_STRENGTH = 30; // 63 seems to be the upper limit
 
@@ -240,9 +239,4 @@ Deno.test("Unlock Assets from Lamport Validator", async () => {
     aliceAddress,
     "Token must be unlocked and present on alice's address",
   );
-
-//   const burnTxHash = await burn(lucid, mintingPolicy, unit, 1n);
-//   await emulator.awaitTx(burnTxHash);
-//   const utxoAfterBurn = await emulator.getUtxoByUnit(unit);
-//   assert(utxoAfterBurn === undefined, "Token should be burned");
 });

@@ -7,11 +7,11 @@ pub type ProofNode {
   sibling_on_left: Bool,
 }
 
-fn recursive_verify_merkle_proof(current: ByteArray, remaining: List<ProofNode>) -> ByteArray {
-  when list.is_empty(remaining) is {
+fn recursive_verify_merkle_proof(current: ByteArray, nodes: List<ProofNode>) -> ByteArray {
+  when list.is_empty(nodes) is {
     True -> current
     False -> {
-      expect Some(head) = list.head(remaining)
+      expect Some(head) = list.head(nodes)
       let ProofNode { hash: sibling, sibling_on_left } = head
 
       let parent = if sibling_on_left {
@@ -20,7 +20,7 @@ fn recursive_verify_merkle_proof(current: ByteArray, remaining: List<ProofNode>)
         sha2_256(bytearray.concat(current, sibling))
       }
 
-      expect Some(rest) = list.tail(remaining)
+      expect Some(rest) = list.tail(nodes)
       recursive_verify_merkle_proof(parent, rest)
     }
   }
