@@ -1,5 +1,7 @@
 # Lamport Proof Of Concept
 
+# Part One
+
 In this Proof-Of-Concept an NFT is minted and locked in a validator with a Lamport public key and an expected message in the datum. In order to unlock the NFT a Lamport signature must be provided via the redeemer. That signature must match with the expected message and public key. 
 
 ## Primary Files
@@ -77,7 +79,9 @@ Is there some way in which I can verify a lamport signature over multiple transa
 
 *see `docs/validation_over_multiple_steps.md` for an outline of an approch to this problem*
 
-## Part Two (Full Strength Verification Over Multiple Transactions) 
+# Part Two (Full Strength Verification Over Multiple Transactions) 
+
+Verifying lamport signatures over many transactions. 
 
 Transaction count: 
 
@@ -90,17 +94,29 @@ Transaction count:
 
 ### Primary files
 
-On-chain 
+**On-chain**
 
-- manystep.ak
-- lib/verify_lamport.ts
-- lib/merkle.ak
+`/lamport-validator/validators/manystep.ak`
 
-off-chain
+A validator to handle the lifetime of the multi-step lamport signature scheme
 
-- offchain_test.ts
-- MerkleTree.ts
-- MultiStepLamport.ts
+`/lamport-validator/lib/verify_lamport.ts`
+
+A module for the lamport logic and any related types
+
+`/lamport-validator/lib/merkle.ak`
+
+A module for merkle proof verification
+
+**off-chain**
+
+`manystep_test.ts`
+
+`MerkleTree.ts`
+
+Definition of MerkleTree class which encapsulates the logic for generating and checking merkle proofs.
+
+`MultiStepLamport.ts`
 
 ## To Do (short terms items to return to)
 
