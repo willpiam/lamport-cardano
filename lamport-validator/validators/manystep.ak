@@ -8,47 +8,15 @@ use aiken/primitive/int
 use aiken/builtin
 use aiken/crypto.{sha2_256}
 use verify_lamport.{LamportPublicKey, verify_lamport}
+use merkle_proof.{ProofNode, verify_merkle_proof}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
+
 pub type MintAction {
   Mint
   Burn
 }
-
-pub type ProofNode {
-  hash: ByteArray,
-  sibling_on_left: Bool,
-}
-
-pub fn recursive_verify_merkle_proof(current: ByteArray, remaining: List<ProofNode>) -> ByteArray {
-  when list.is_empty(remaining) is {
-    True -> current
-    False -> {
-      expect Some(head) = list.head(remaining)
-      let ProofNode { hash: sibling, sibling_on_left } = head
-
-      let parent = if sibling_on_left {
-        sha2_256(bytearray.concat(sibling, current))
-      } else {
-        sha2_256(bytearray.concat(current, sibling))
-      }
-
-      expect Some(rest) = list.tail(remaining)
-      recursive_verify_merkle_proof(parent, rest)
-    }
-  }
-}
-
-pub fn verify_merkle_proof(root: ByteArray, proof: List<ProofNode>, leaf_hash: ByteArray) -> Bool {
-  let derived_root = recursive_verify_merkle_proof(leaf_hash, proof)
-  root == derived_root
-}
-
-// pub type MintRedeemer {
-//   action: MintAction,
-//   root: ByteArray,
-// }
 
 pub type SpendAction {
   InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
@@ -56,13 +24,6 @@ pub type SpendAction {
   VerifyFullSignature (ByteArray) // message
 }
 
-// pub type SpendRedeemer {
-//   action: SpendAction,
-// }
-// pub type PublicKeyChunk {
-//   pk_left: List<ByteArray>,
-//   pk_right: List<ByteArray>,
-// }
 pub type PublicKeyChunk = LamportPublicKey
 
 pub type State {
@@ -128,7 +89,7 @@ pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bo
   }
 }
 
-const eight = bytearray.from_string(int.to_string(8))
+// const eight = bytearray.from_string(int.to_string(8))
 const expected_asset_names = list.map(list.range(1, 8), fn(i) { // can I do this at compile time?
   bytearray.from_string(int.to_string(i))
 })
@@ -298,7 +259,6 @@ validator manysteplamport(_version: Int) {
     }
   }
 
-  // mint(redeemer: MintRedeemer, policy_id: PolicyId, self: Transaction) {
   mint(action: MintAction, policy_id: PolicyId, self: Transaction) {
     let Transaction { inputs, mint, outputs, .. } = self
 
@@ -336,7 +296,6 @@ validator manysteplamport(_version: Int) {
           expect Pair(_, amount) = token
           amount == -1 
         }),
-        // TODO (nope): each token must have State redeemer made with the SignMessageChunk constructor (actually this is already covered by the spend validators)
       }
     }
   }
