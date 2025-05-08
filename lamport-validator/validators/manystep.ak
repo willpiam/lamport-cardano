@@ -19,7 +19,6 @@ pub type MintAction {
 }
 
 pub type SpendAction {
-  // InitializePublicKeyChunk {merkle_proof: List<ProofNode>, position: Int, leaf_hash: ByteArray}
   InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
   VerifySignatureChunk (List<ByteArray>)
   VerifyFullSignature (ByteArray) // message
@@ -28,11 +27,9 @@ pub type SpendAction {
 pub type PublicKeyChunk = LamportPublicKey
 
 pub type State {
-  // Initial {tokens_not_initalized: Int, public_key_merkle_root: ByteArray}
   Initial (Int, ByteArray) // tokens not initalized, public key merkle root
   PreparedPublicKeyChunk (Int, PublicKeyChunk) // position, chunk
   SignedMessageChunk (Int, ByteArray) // position, chunk
-  Default
 }
 
 pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
@@ -45,20 +42,6 @@ pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
   } else {
     Equal
   }
-}
-pub fn find_output_with_tokens(
-  policy_id: PolicyId,
-  outputs: List<Output>,
-) -> Option<Output> {
-  outputs
-    |> list.find(
-        fn(output) {
-          8 == (output.value
-            |> assets.tokens(policy_id)
-            |> dict.to_pairs()
-            |> list.length())
-        },
-      )
 }
 
 pub fn find_output_with_asset(policy_id : PolicyId, asset_name : AssetName, outputs : List<Output>) -> Option<Output> {
@@ -76,25 +59,6 @@ pub fn find_output_with_asset(policy_id : PolicyId, asset_name : AssetName, outp
         },
       )
 }
-
-pub fn has_expected_names_and_amounts(minted_tokens: Dict<AssetName, Int>) -> Bool {
-  /// names must be '1', '2', '3', '4', '5', '6', '7', '8'
-  and {
-    dict.get(minted_tokens, "1") == Some(1),
-    dict.get(minted_tokens, "2") == Some(1),
-    dict.get(minted_tokens, "3") == Some(1),
-    dict.get(minted_tokens, "4") == Some(1),
-    dict.get(minted_tokens, "5") == Some(1),
-    dict.get(minted_tokens, "6") == Some(1),
-    dict.get(minted_tokens, "7") == Some(1),
-    dict.get(minted_tokens, "8") == Some(1),
-  }
-}
-
-// const eight = bytearray.from_string(int.to_string(8))
-const expected_asset_names = list.map(list.range(1, 8), fn(i) { // can I do this at compile time?
-  bytearray.from_string(int.to_string(i))
-})
 
 pub fn check_remaining_uninitialized(
   outputs : List<Output>, 
@@ -231,7 +195,7 @@ validator manysteplamport(_version: Int) {
         expect Some(one_of_expected_inputs) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
         expect Script(policy_id) = one_of_expected_inputs.output.address.payment_credential
       
-        let signed_message_hash = expected_asset_names // "1", "2", "3", "4", "5", "6", "7", "8"
+        let signed_message_hash = ["1", "2", "3", "4", "5", "6", "7", "8"]
           |> list.map(fn(asset_name) {
             expect Some(output) = find_output_with_asset(policy_id, asset_name, list.map(inputs, fn(input) { input.output }))
             expect InlineDatum(output_datum) = output.datum
@@ -272,7 +236,12 @@ validator manysteplamport(_version: Int) {
         // mint 8 tokens and send to this validator on a single output
         // output datum must hold merkle root
         // amount minted of each token must be 1
-        expect Some(output) = find_output_with_tokens(policy_id, outputs)
+        expect Some(output) = outputs |> list.find(fn(output) {
+          8 == (output.value
+            |> assets.tokens(policy_id)
+            |> dict.to_pairs()
+            |> list.length())
+        })
         expect InlineDatum(datum) = output.datum
         expect Initial(tokens_not_initalized, public_key_merkle_root) = datum
 
@@ -287,7 +256,14 @@ validator manysteplamport(_version: Int) {
           // must lock in same script as mint
           policy_id == locked_script,
           // minted tokens must have expected names and amounts
-          has_expected_names_and_amounts(mint_dict),
+          dict.get(mint_dict, "1") == Some(1),
+          dict.get(mint_dict, "2") == Some(1),
+          dict.get(mint_dict, "3") == Some(1),
+          dict.get(mint_dict, "4") == Some(1),
+          dict.get(mint_dict, "5") == Some(1),
+          dict.get(mint_dict, "6") == Some(1),
+          dict.get(mint_dict, "7") == Some(1),
+          dict.get(mint_dict, "8") == Some(1),
         }
       }
       Burn -> and {

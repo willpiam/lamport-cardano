@@ -90,7 +90,6 @@ const State = {
     Data.to(
       new Constr(2, [messagePosition, toHex(messageChunk)]),
     ),
-  Default: () => Data.to(new Constr(3, [])),
 };
 
 const Bool = {
