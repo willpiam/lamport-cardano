@@ -1,5 +1,5 @@
 import { toHex } from "npm:@blaze-cardano/core";
-import { Lamport, generateSeed, keyToHex, signatureToHex, uint8ArrayToBinaryString, validateKey } from "./Lamport.ts";
+import { Lamport, generateSeed, signatureToHex, uint8ArrayToBinaryString, validateKey } from "./Lamport.ts";
 
 const KEY_STRENGTH = 128;
 const lamport = new Lamport(await generateSeed(), KEY_STRENGTH);
@@ -18,8 +18,6 @@ if (secretBinary.length !== 256) {
 }
 
 const privateKey = await lamport.privateKey();
-
-console.log(keyToHex(privateKey));
 
 const isPriValid = validateKey(privateKey, KEY_STRENGTH);
 

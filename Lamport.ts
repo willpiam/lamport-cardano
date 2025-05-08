@@ -40,11 +40,6 @@ const validateKey = (key: LamportKey, keyStrength : number): boolean => {
 
 const signatureToHex = (signature: LamportSignature): string[] => signature.map(toHex);
 
-const keyToHex = (key: LamportKey): [string[], string[]] => {
-    const [group1, group2] = key;
-    return [group1.map(toHex), group2.map(toHex)];
-}
-
 class Lamport {
     initialSecret: Uint8Array;
     textEncoder: TextEncoder;
@@ -146,7 +141,6 @@ export {
     generateSeed,
     uint8ArrayToBinaryString,
     validateKey,
-    keyToHex,
     signatureToHex,
     type LamportKey,
     type LamportSignature,
