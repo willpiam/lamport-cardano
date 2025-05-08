@@ -31,6 +31,9 @@ pub type State {
   SignedMessageChunk (Int, ByteArray) // position, chunk
 }
 
+/// compare_signed_message_chunk
+/// an ordering for SignedMessageChunks based on the Int (position) value 
+/// used in: VerifyFullSignature 
 pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
   expect SignedMessageChunk(left_position, _) = left
   expect SignedMessageChunk(right_position, _) = right
@@ -43,6 +46,10 @@ pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
   }
 }
 
+/// find_output_with_asset
+/// given a policy id, an asset name, and a list of outputs
+/// return an output from the list which has the provided policy id and asset name
+/// used in: InitializePublicKeyChunk, VerifySignatureChunk, VerifyFullSignature
 pub fn find_output_with_asset(policy_id : PolicyId, asset_name : AssetName, outputs : List<Output>) -> Option<Output> {
   outputs
     |> list.find(
@@ -59,6 +66,11 @@ pub fn find_output_with_asset(policy_id : PolicyId, asset_name : AssetName, outp
       )
 }
 
+
+/// check_remaining_uninitialized
+/// check that the remaining uninitialized tokens are 
+/// in a single utxo with the expected datum
+/// used in: InitializePublicKeyChunk 
 pub fn check_remaining_uninitialized(
   outputs : List<Output>, 
   policy_id : PolicyId, 
@@ -91,6 +103,9 @@ pub fn check_remaining_uninitialized(
   }
 }
 
+/// hash_chunk
+/// reduce a PublickKeyChunk down to a single bytearray and hash it
+/// used in: InitializePublicKeyChunk
 pub fn hash_chunk(chunk : PublicKeyChunk) -> ByteArray {
   let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
   let flat_chunk = list.reduce(chunk_elements, #[], fn(acc, curr) {

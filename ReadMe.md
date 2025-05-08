@@ -47,7 +47,7 @@ SEED_PHRASE=""
 NETWORK="Preview"
 ```
 
-## Demo
+## First Demo (Partial Strength Veification)
 
 With strength set to 63
 
@@ -57,6 +57,8 @@ With strength set to 63
 - [Burn](https://preview.cardanoscan.io/transaction/a3da7cab90612c546fd36687237354fa83946d989ccb402f4c7c697d6d3bfccb)
 
 The actual verification of the Lamport signature happens during the *unlock* step.
+
+
 
 ## Questions
 
@@ -75,11 +77,24 @@ Is there some way in which I can verify a lamport signature over multiple transa
 
 *see `docs/validation_over_multiple_steps.md` for an outline of an approch to this problem*
 
+## Part Two (Full Strength Verification Over Multiple Transactions) 
+
+Transaction count: 
+
+    1 to mint
+    8 to init
+    8 to verify signature
+    1 to check message and burn
+
+    18 transactions total
+
+
 ## To Do (short terms items to return to)
 
 - [ ] make `lamport.ak` use `lib/verify_lamport.ak`
 - [ ] write a through series of tests for `Lamport.ts`
-- [ ] add tests for "things that should fail" to `manystep_test.ts`
+- [x] add tests for "things that should fail" to `manystep_test.ts`
+
 
 
 ## Related Work
