@@ -54,7 +54,7 @@ const units = Array.from(
   { length: 8 },
   (_, i) => policyId + fromText(`${i + 1}`),
 );
-const assetsToMint = units.reduce((acc, unit) => ({ ...acc, [unit]: 1n }), {});
+const assetsToMint = units.reduce((acc, unit) => ({ ...acc, [unit]: 1n }), {} as any);
 
 const validator: SpendingValidator = {
   type: "PlutusV3",
@@ -218,7 +218,9 @@ const testState: TestState = {
   assetsToInitialize: null,
   message: null,
 };
-testState.assetsToInitialize = assetsToMint;
+// testState.assetsToInitialize = assetsToMint;
+// testState.assetsToInitialize = JSON.parse(JSON.stringify(assetsToMint));
+testState.assetsToInitialize = structuredClone(assetsToMint);
 
 Deno.test("Mint our 8 tokens", async () => {
   testState.msLamport = new MultiStepLamport(await generateSeed());
@@ -542,7 +544,6 @@ Deno.test("Post the rest of the signature on-chain", async () => {
 */
 
 Deno.test("Spend the tokens and verify the message", async () => {
-  
   const scriptUtxos = await lucid.utxosAt(scriptAddress).then(
     utxos => utxos.filter(
       utxo => Object.keys(utxo.assets).some((asset) => asset.startsWith(policyId))
@@ -569,5 +570,131 @@ Deno.test("Spend the tokens and verify the message", async () => {
   const txHash = await signed.submit();
 
   await lucid.awaitTx(txHash);
+
+  // expect that neither the script address nor the wallet address have any assets with the policy id
+  const assertNoAssetsFromPolicy = async (address: string) => {
+    const utxos = await lucid.utxosAt(address)
+    const assets = utxos.flatMap(utxo => Object.keys(utxo.assets))
+    console.log(`%cAssets on ${address}: ${JSON.stringify(assets, null, 2)}`, "color: hotpink")
+    for (const asset of assets) {
+      assert(!asset.startsWith(policyId), `The asset ${asset} should not start with the policy id`);
+    }
+  }
+
+  await assertNoAssetsFromPolicy(scriptAddress);
+  await assertNoAssetsFromPolicy(await lucid.wallet().address());
 });
 
+Deno.test("Bad ways to mint", async (t) => {
+  assertExists(testState.msLamport, "The msLamport should be initialized at this point in the test");
+  const merkleRoot = await testState.msLamport.publicKeyMerkleRoot();
+  const initialState = State.Initial(8n, merkleRoot);
+  console.log(`Initial state: ${initialState}`);
+  console.log(`Initial root:  ${toHex(merkleRoot)}`);
+  console.log("assetsToMint", assetsToMint)
+
+  await t.step("This is how it should actually be done", async () => {
+    await lucid.newTx()
+      .mintAssets(assetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: initialState },
+        assetsToMint,
+      )
+      .complete();
+  });
+
+  await t.step("Send to wrong address", async () => {
+    const incomplete = lucid.newTx()
+      .mintAssets(assetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        await lucid.wallet().address(),
+        { kind: "inline", value: initialState },
+        assetsToMint,
+      )
+
+      await assertRejects(incomplete.complete, "Bad because the address is wrong")
+  });
+
+  await t.step("Mint wrong amount - only 7", async () => {
+    const badAssetsToMint = structuredClone(assetsToMint);
+
+    badAssetsToMint[policyId + fromText("8")] = 0n;
+    const incomplete = lucid.newTx()
+      .mintAssets(badAssetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: initialState },
+        badAssetsToMint,
+      )
+
+      await assertRejects(incomplete.complete, "Bad because the amount is wrong")
+  });
+
+  await t.step("Mint wrong amount - too many (9)", async () => {
+    const badAssetsToMint = structuredClone(assetsToMint);
+    badAssetsToMint[policyId + fromText("9")] = 1n;
+
+    const incomplete = lucid.newTx()
+      .mintAssets(badAssetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: initialState },
+        badAssetsToMint,
+      )
+
+      await assertRejects(incomplete.complete, "Bad because the amount is wrong")
+  });
+
+  await t.step("Mint wrong amount - mint 2 of the first token", async () => {
+    const badAssetsToMint = structuredClone(assetsToMint);
+    badAssetsToMint[policyId + fromText("1")] = 2n;
+
+    const incomplete = lucid.newTx()
+      .mintAssets(badAssetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: initialState },
+        badAssetsToMint,
+      )
+
+      await assertRejects(incomplete.complete, "Bad because the amount is wrong")
+  });
+
+  /*
+
+  Template for bad minting: 
+
+  await t.step("", async () => {
+    const incomplete = lucid.newTx()
+      .mintAssets(assetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: initialState },
+        assetsToMint,
+      )
+
+      await assertRejects(incomplete.complete, "")
+  });
+
+  */
+  await t.step("Bad datum", async () => {
+    const badInitialState = State.Initial(7n, merkleRoot);
+    const incomplete = lucid.newTx()
+      .mintAssets(assetsToMint, MintAction.Mint)
+      .attach.MintingPolicy(mintingPolicy)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: badInitialState },
+        assetsToMint,
+      )
+
+      await assertRejects(incomplete.complete, "Bad because tokens_not_initalized is wrong")
+  });
+});

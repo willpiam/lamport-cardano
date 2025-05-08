@@ -4,3 +4,4 @@ txHashes.json
 lamportPersistence/
 lamport-validator/plutus.json
 /coverage
+cov.lcov
