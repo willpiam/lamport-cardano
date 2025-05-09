@@ -2,7 +2,6 @@
 import { assert } from "https://deno.land/std@0.202.0/assert/mod.ts";
 import { Lamport, generateSeed, validateKey } from "./Lamport.ts";
 import { assertEquals } from "@std/assert/equals";
-import { toHex } from "npm:@blaze-cardano/core";
 
 const keyStrength = 256;
 
@@ -90,6 +89,4 @@ Deno.test("Private keys make sense", async () => {
   const lamport = new Lamport(seed, keyStrength);
   const privateKey = await lamport.privateKey();
   assert(validateKey(privateKey, keyStrength), "Private key should be valid");
-  // [...privateKey[0], ...privateKey[1]].forEach((element, index) => 
-  //   console.log(`%c${`${index + 1}.`.padEnd(4)}${toHex(element)}`, "color: hotpink"));
 });
