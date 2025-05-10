@@ -1021,6 +1021,24 @@ Deno.test("Bad ways to sign (post signature on-chain)", async (t) => {
     // await incomplete.complete()
   });
 
+  await t.step("signature is reversed", async () => {
+    const reversedSignaturePart = signatureParts[position].toReversed();
+    const incomplete = lucid.newTx()
+      .collectFrom(
+        scriptUtxos,
+        SpendAction.VerifySignatureChunk(reversedSignaturePart),
+      )
+      .attach.SpendingValidator(validator)
+      .pay.ToContract(
+        scriptAddress,
+        { kind: "inline", value: State.SignedMessageChunk(BigInt(position), messageHashChunk) },
+        { [policyId + fromText(`${position + 1}`)]: 1n },
+      )
+
+      // await incomplete.complete()
+      await assertRejects(incomplete.complete, "Bad because the signature part is wrong (reversed)")
+  });
+
   const postSignaturePart = async (position: number) => {
     assert(position >= 0, "Position must be greater than or equal to 0");
     assert(position < 8, "Position must be less than 8");
