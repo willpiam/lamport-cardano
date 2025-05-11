@@ -812,11 +812,13 @@ Deno.test("Bad ways to initialize", async (t) => {
       await assertRejects(incomplete.complete, "Bad because the public key chunk is wrong")
   });
 
-  await t.step("bad -- shuffle the merkle proof", async () => {
-    const badMerkleProof = structuredClone(merkleProof)
-      .map(node => ({value: node, sort: Math.random()}))
-      .sort((a, b) => a.sort - b.sort)
-      .map(node => node.value);
+  await t.step("bad -- reverse the merkle proof", async () => {
+    // const badMerkleProof = structuredClone(merkleProof)
+    //   .map(node => ({value: node, sort: Math.random()}))
+    //   .sort((a, b) => a.sort - b.sort)
+    //   .map(node => node.value);
+    const badMerkleProof = merkleProof.toReversed();
+    console.log(`%cBad merkle proof length: ${badMerkleProof.length}`, "color: hotpink");
 
     // sanity check
     assertEquals(badMerkleProof.length, merkleProof.length, "The length of the shuffled merkle proof should be the same as the original");
@@ -839,7 +841,7 @@ Deno.test("Bad ways to initialize", async (t) => {
       )
 
       // await incomplete.complete();
-      await assertRejects(incomplete.complete, "Bad because the merkle proof is wrong (shuffled)")
+      await assertRejects(incomplete.complete, "Bad because the merkle proof is wrong (reversed)")
   });
 
   // finally we will actually initialize the tokens

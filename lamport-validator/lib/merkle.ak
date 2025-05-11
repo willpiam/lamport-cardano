@@ -14,10 +14,14 @@ fn recursive_verify_merkle_proof(current: ByteArray, nodes: List<ProofNode>) -> 
       expect Some(head) = list.head(nodes)
       let ProofNode { hash: sibling, sibling_on_left } = head
 
-      let parent = if sibling_on_left {
-        sha2_256(bytearray.concat(sibling, current))
-      } else {
-        sha2_256(bytearray.concat(current, sibling))
+      // let parent = if sibling_on_left {
+      //   sha2_256(bytearray.concat(sibling, current))
+      // } else {
+      //   sha2_256(bytearray.concat(current, sibling))
+      // }
+      let parent = when sibling_on_left is {
+        True -> sha2_256(bytearray.concat(sibling, current))
+        False -> sha2_256(bytearray.concat(current, sibling))
       }
 
       expect Some(rest) = list.tail(nodes)
