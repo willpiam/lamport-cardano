@@ -1,6 +1,16 @@
 # Lamport Proof Of Concept
 
-# Part One
+## The Problem 
+
+The Cardano blockchain has a tight restiriction on the transaction size and number of computational steps taken per transaction which makes it infeasable to verify a lamport signature. 
+
+There is an additional issue which is that the lampoert signature itself counts toward the transaction hash because it cannot be stored in the witness set and is instead placed inside the redeemer. 
+
+The first two parts of this proof-of-concept circumvent the transaction size limit in different ways. The first part simply truncates the lamport key sizes to a value that will fit. This has the obvious disadvantage of reduced security. The second part verifies a signature over many transactions. This enables 256 bit security but sacrafices usability and incurs greater transaction fees. The final part of this proof-of-concept addresses the problem of gnature inclusion in the transaction hash. This is acomplished by building and signing a custom representation of the transaction. 
+
+## Part 1 - Partial Verification
+
+
 
 In this Proof-Of-Concept an NFT is minted and locked in a validator with a Lamport public key and an expected message in the datum. In order to unlock the NFT a Lamport signature must be provided via the redeemer. That signature must match with the expected message and public key. 
 
@@ -98,7 +108,7 @@ Transaction count:
 
 `/lamport-validator/validators/manystep.ak`
 
-A validator to handle the lifetime of the multi-step lamport signature scheme
+A validator to handle the lifetime of the multi-step lamport signature scheme. 
 
 `/lamport-validator/lib/verify_lamport.ts`
 
@@ -112,11 +122,15 @@ A module for merkle proof verification
 
 `manystep_test.ts`
 
+A series of unit tests to simulate the use of the multi-step lamport authentication scheme. 
+
 `MerkleTree.ts`
 
 Definition of MerkleTree class which encapsulates the logic for generating and checking merkle proofs.
 
 `MultiStepLamport.ts`
+
+A class derived from the Lamport class (defined in Lamport.ts) with added functions to support the chunk and merkle tree systems.
 
 ## To Do (short terms items to return to)
 
