@@ -26,10 +26,6 @@ This demonstraties how to execute the lamport algorithum for signature verificat
 
 `index.ts`
 
-### Running
-
-    deno task run:emulator
-
 ### Available Tasks
 
 - `deno task dev` - Run the project in watch mode
@@ -39,13 +35,6 @@ This demonstraties how to execute the lamport algorithum for signature verificat
 - `deno task persistenceTest` - Run the persistence experiment
 - `deno task lamportExperiment` - Run the off-chain experiment
 
-### dotenv
-
-```ini
-BLOCKFROST_API_KEY=""
-SEED_PHRASE=""
-NETWORK="Preview"
-```
 
 ### First Demo (Partial Strength Veification)
 
@@ -60,32 +49,11 @@ The actual verification of the Lamport signature happens during the *unlock* ste
 
 ## Part 2 - Full Verification Over Many Transactions
 
-
-
------
-
-## Questions
-
-### Making an account
-
-*The Transaction Malleability Problem*
-
-How can we prevent replay attacks in a Lamport signature scheme where the message being signed needs to uniquely identify the transaction, but the signature itself (stored in the redeemer) affects the transaction hash?
-
-In other words if I sign to spend from my Lamport validator but never submit the transaction on-chain and instead give you the signature, how can I be sure that the only thing you can do with it is use it to spend my utxo exactly as I intended to spend it. 
-
-
-### Verification Over Many Transactions
-
-Is there some way in which I can verify a lamport signature over multiple transactions?
-
-*see `docs/validation_over_multiple_steps.md` for an outline of an approch to this problem*
-
-# Part Two (Full Strength Verification Over Multiple Transactions) 
-
 Verifying lamport signatures over many transactions. 
+**TODO: continue with explanation**
 
-Transaction count: 
+
+### Transaction Count
 
     1 to mint
     8 to init
@@ -123,6 +91,35 @@ Definition of MerkleTree class which encapsulates the logic for generating and c
 `MultiStepLamport.ts`
 
 A class derived from the Lamport class (defined in Lamport.ts) with added functions to support the chunk and merkle tree systems.
+
+
+-----
+
+## Questions
+
+### Making an account
+
+*The Transaction Malleability Problem*
+
+How can we prevent replay attacks in a Lamport signature scheme where the message being signed needs to uniquely identify the transaction, but the signature itself (stored in the redeemer) affects the transaction hash?
+
+In other words if I sign to spend from my Lamport validator but never submit the transaction on-chain and instead give you the signature, how can I be sure that the only thing you can do with it is use it to spend my utxo exactly as I intended to spend it. 
+
+
+### Verification Over Many Transactions
+
+Is there some way in which I can verify a lamport signature over multiple transactions?
+
+*see `docs/validation_over_multiple_steps.md` for an outline of an approch to this problem*
+
+
+## dotenv
+
+```ini
+BLOCKFROST_API_KEY=""
+SEED_PHRASE=""
+NETWORK="Preview"
+```
 
 ## To Do (short terms items to return to)
 
