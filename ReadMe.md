@@ -2,43 +2,35 @@
 
 ## The Problem 
 
-The Cardano blockchain has a tight restiriction on the transaction size and number of computational steps taken per transaction which makes it infeasable to verify a lamport signature. 
+The Cardano blockchain has a tight restiriction on the transaction size and number of computational steps taken per transaction which makes it infeasable to verify a lamport signature. [1] 
 
-There is an additional issue which is that the lampoert signature itself counts toward the transaction hash because it cannot be stored in the witness set and is instead placed inside the redeemer. 
+There is an additional issue which is that the lampoert signature itself counts toward the transaction hash because it cannot be stored in the witness set and is instead placed inside the redeemer. I refer to this as *the circular-hash-dependency problem*. 
 
-The first two parts of this proof-of-concept circumvent the transaction size limit in different ways. The first part simply truncates the lamport key sizes to a value that will fit. This has the obvious disadvantage of reduced security. The second part verifies a signature over many transactions. This enables 256 bit security but sacrafices usability and incurs greater transaction fees. The final part of this proof-of-concept addresses the problem of gnature inclusion in the transaction hash. This is acomplished by building and signing a custom representation of the transaction. 
+The first two parts of this proof-of-concept circumvent the transaction size limit in different ways. The first part simply truncates the lamport key sizes to a value that will fit. This has the obvious disadvantage of reduced security. The second part verifies a signature over many transactions. This enables 256 bit security but sacrafices usability and incurs greater transaction fees. The final part of this proof-of-concept addresses *the circular-hash-dependency problem*. This is acomplished by building and signing a custom representation of the transaction.  
 
-## Part 1 - Partial Verification
+1. As of __date__ the transaction size limit is __ and the maximum number of steps is __. 
 
-
+## Part 1 - Partial Verification or Truncated Signatures
 
 In this Proof-Of-Concept an NFT is minted and locked in a validator with a Lamport public key and an expected message in the datum. In order to unlock the NFT a Lamport signature must be provided via the redeemer. That signature must match with the expected message and public key. 
 
-## Primary Files
+This demonstraties how to execute the lamport algorithum for signature verification in a smart contract. To address the transaction size limitation the public key and signature are truncated to a prespecified strength. This PoC does nothing to address *the circular-hash-dependency problem*
 
-### On-Chain
+### Primary Files
+
+#### On-Chain
 
 `/lamport-validator/validators/lamport.ak`
 
-### Off-Chain
+#### Off-Chain
 
 `index.ts`
-
-## Running (fully local test)
-
-### Build
-
-```bash
-cd lamport-validator
-aiken build
-```
-Please note that if you have `plutus.json` in the `lamport-validator` folder the smart contract is already compiled. 
 
 ### Running
 
     deno task run:emulator
 
-## Available Tasks
+### Available Tasks
 
 - `deno task dev` - Run the project in watch mode
 - `deno task run` - Run the project
@@ -47,11 +39,7 @@ Please note that if you have `plutus.json` in the `lamport-validator` folder the
 - `deno task persistenceTest` - Run the persistence experiment
 - `deno task lamportExperiment` - Run the off-chain experiment
 
-## Available Tests
-- `deno test test_offchain.ts` - Run off-chain tests
-- `deno test lamport_test.ts --allow-read` - Run on-chain tests (emulated)
-
-## dotenv
+### dotenv
 
 ```ini
 BLOCKFROST_API_KEY=""
@@ -59,7 +47,7 @@ SEED_PHRASE=""
 NETWORK="Preview"
 ```
 
-## First Demo (Partial Strength Veification)
+### First Demo (Partial Strength Veification)
 
 With strength set to 63
 
@@ -70,7 +58,11 @@ With strength set to 63
 
 The actual verification of the Lamport signature happens during the *unlock* step.
 
+## Part 2 - Full Verification Over Many Transactions
 
+
+
+-----
 
 ## Questions
 
