@@ -49,9 +49,30 @@ The actual verification of the Lamport signature happens during the *unlock* ste
 
 ## Part 2 - Full Verification Over Many Transactions
 
-Verifying lamport signatures over many transactions. 
-**TODO: continue with explanation**
+In this phase of the proof-of-concept we construct a scheme which uses eight *ephemeral NFTs* to initially represent a piece of a public key and later to represent a piece of a message hash signed with that public key. This scheme allows us to verify one eigth of a signed message at a time and later to combine these parts to verify a a full 256 bit lamport signature.   
 
+
+### Steps
+
+#### Minting the tokens
+
+The eight nfts are minted into the same utxo. Their names are "1", "2", through "8". They are locked with a 
+datum which contains a 256 bit merkle root and an integer of value 8. 
+
+#### Initializeing The Public Key Chunks
+
+In order of their names we one at a time "initialize" a token by moving it into its own utxo and locking it with a datum containing an integer representing the position of the key chunk, and the public key chunk itself. After each token is initialized with a public key we move the rest into a similar datum to what they were in previously but with the integer value in its datum decremented by one. 
+
+#### Verifying Each Signature Chunk
+
+Off-chain the user decides what message they want to sign. They take its 256 bit hash and break it into eight 
+pieces while being careful to remeber their original order. They then sign each piece with the corisponding part of their lamport key. 
+
+On-chain the resulting signature chunk is provided via the redeemer and the token is transfered to a utxo locked with a datum holding the position of the message chunk as well as a 32 bit chunk storing one eigth of the message hash. 
+
+#### Verifying The Full Signature
+
+Finally all eight tokens are gathered in a final transaction. The unhashed message is submitted via the redeemer. The message hash chunks are concatinated together and then compaired against the hash of the message in the redeemer. These two 256 bit values must be identical. In this final transaction all eight of the tokens must be burnt. 
 
 ### Transaction Count
 
@@ -95,6 +116,10 @@ A class derived from the Lamport class (defined in Lamport.ts) with added functi
 
 -----
 
+
+**Note to self... we should probably be able to get ride of all these "position" values in the datums/redeemers and only use the number found in the tokens name. Or we could consider using the token name to serve some other role**
+
+
 ## Questions
 
 ### Making an account
@@ -126,6 +151,7 @@ NETWORK="Preview"
 - [ ] make `lamport.ak` use `lib/verify_lamport.ak`
 - [ ] write a through series of tests for `Lamport.ts`
 - [x] add tests for "things that should fail" to `manystep_test.ts`
+- [ ] Make **sure** merkle tree implementation is rock solid 
 
 
 
