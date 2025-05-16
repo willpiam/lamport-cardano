@@ -1,11 +1,34 @@
-use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction, Input}
+use cardano/transaction.{ScriptPurpose, Redeemer, InlineDatum, Output, OutputReference, Transaction, Input}
 use aiken/builtin
-use aiken/crypto.{Hash, Sha2_256, sha2_256}
+use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash, DataHash}
 use cardano/assets.{Lovelace, Value}
 use cardano/certificate.{Certificate}
 use cardano/address.{Credential}
+use aiken/collection/dict.{Dict}
+use cardano/governance.{Voter, GovernanceActionId, Vote, ProposalProcedure}
 
 // TODO: come up with a better name than Custom Transaction Id
+// TODO: for each "with_" function make sure to avoid everything that would cause the circular-hash-input problem
+
+// Transaction as defined in aiken docs
+// Transaction {
+//   inputs: List<Input>,
+//   reference_inputs: List<Input>,
+//   outputs: List<Output>,
+//   fee: Lovelace,
+//   mint: Value,
+//   certificates: List<Certificate>,
+//   withdrawals: Pairs<Credential, Lovelace>,
+//   validity_range: ValidityRange,
+//   extra_signatories: List<VerificationKeyHash>,
+//   redeemers: Pairs<ScriptPurpose, Redeemer>,
+//   datums: Dict<DataHash, Data>,
+//   id: TransactionId,
+//   votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>,
+//   proposal_procedures: List<ProposalProcedure>,
+//   current_treasury_amount: Option<Lovelace>,
+//   treasury_donation: Option<Lovelace>,
+// }
 
 type CustomTransactionIdBuilder {
   inputs: Option<ByteArray>,
@@ -108,6 +131,70 @@ fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Creden
   }
 }
 
+fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: List<VerificationKeyHash>) -> CustomTransactionIdBuilder {
+  let extra_signatories_bytes = builtin.serialise_data(extra_signatories)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    extra_signatories: Some(extra_signatories_bytes)
+  }
+}
+
+fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
+  let redeemers_bytes = builtin.serialise_data(redeemers)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    redeemers: Some(redeemers_bytes)
+  }
+}
+
+fn with_datums(self: CustomTransactionIdBuilder, datums: Dict<DataHash, Data>) -> CustomTransactionIdBuilder {
+  let datums_bytes = builtin.serialise_data(datums)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    datums: Some(datums_bytes)
+  }
+}
+
+fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>) -> CustomTransactionIdBuilder {
+  let votes_bytes = builtin.serialise_data(votes)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    votes: Some(votes_bytes)
+  }
+}
+
+fn with_proposal_procedures(self: CustomTransactionIdBuilder, proposal_procedures: List<ProposalProcedure>) -> CustomTransactionIdBuilder {
+  let proposal_procedures_bytes = builtin.serialise_data(proposal_procedures)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    proposal_procedures: Some(proposal_procedures_bytes)
+  }
+}
+
+fn with_current_treasury_amount(self: CustomTransactionIdBuilder, current_treasury_amount: Option<Lovelace>) -> CustomTransactionIdBuilder {
+  let current_treasury_amount_bytes = builtin.serialise_data(current_treasury_amount)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    current_treasury_amount: Some(current_treasury_amount_bytes)
+  }
+}
+
+fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: Option<Lovelace>) -> CustomTransactionIdBuilder {
+  let treasury_donation_bytes = builtin.serialise_data(treasury_donation)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    treasury_donation: Some(treasury_donation_bytes)
+  }
+}
+
+
 
 fn build_custom_transaction_id(tx: CustomTransactionIdBuilder) -> CustomTransactionId {
   sha2_256(builtin.serialise_data(tx))
@@ -123,18 +210,15 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_mint(tx.mint)
                   |> with_certificates(tx.certificates)
                   |> with_withdrawals(tx.withdrawals)
+                  |> with_extra_signatories(tx.extra_signatories)
+                  |> with_redeemers(tx.redeemers)
+                  |> with_datums(tx.datums)
+                  |> with_votes(tx.votes)
+                  |> with_proposal_procedures(tx.proposal_procedures)
+                  |> with_current_treasury_amount(tx.current_treasury_amount)
+                  |> with_treasury_donation(tx.treasury_donation)
 
   build_custom_transaction_id(builder)
-  // builtin.serialise_data(tx)
-
-  // for each field in the transaction type
-  //   remove the parts which we cannot include in the hash
-  //   convert to bytes
-
-  // concatinate all the bytes from all the fields
-  // return the hash of those bytes
-
-
 }
 
 
