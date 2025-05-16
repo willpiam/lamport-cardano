@@ -2,6 +2,8 @@ use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction, Inpu
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256}
 use cardano/assets.{Lovelace, Value}
+use cardano/certificate.{Certificate}
+use cardano/address.{Credential}
 
 // TODO: come up with a better name than Custom Transaction Id
 
@@ -88,6 +90,23 @@ fn with_mint(self: CustomTransactionIdBuilder, mint: Value) -> CustomTransaction
   }
 }
 
+fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certificate>) -> CustomTransactionIdBuilder {
+  let certificates_bytes = builtin.serialise_data(certificates)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    certificates: Some(certificates_bytes)
+  }
+}
+
+fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
+  let withdrawals_bytes = builtin.serialise_data(withdrawals)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    withdrawals: Some(withdrawals_bytes)
+  }
+}
 
 
 fn build_custom_transaction_id(tx: CustomTransactionIdBuilder) -> CustomTransactionId {
@@ -102,6 +121,8 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_outputs(tx.outputs)
                   |> with_fee(tx.fee)
                   |> with_mint(tx.mint)
+                  |> with_certificates(tx.certificates)
+                  |> with_withdrawals(tx.withdrawals)
 
   build_custom_transaction_id(builder)
   // builtin.serialise_data(tx)
