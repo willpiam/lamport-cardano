@@ -5,6 +5,7 @@ use cardano/assets.{Lovelace, Value}
 use cardano/certificate.{Certificate}
 use cardano/address.{Credential}
 use aiken/collection/dict.{Dict}
+use aiken/collection/list
 use cardano/governance.{Voter, GovernanceActionId, Vote, ProposalProcedure}
 
 // TODO: come up with a better name than Custom Transaction Id
@@ -69,7 +70,13 @@ fn new_custom_transaction_id(tx: Transaction) -> CustomTransactionIdBuilder {
 }
 
 fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
-  let inputs_bytes = builtin.serialise_data(inputs)
+  // for each input drop input.output_reference.transaction_id
+  let sanitized_inputs = inputs |> list.map(fn(input) -> ByteArray {
+    let Input {output_reference, output} = input
+    builtin.serialise_data(output)
+  })
+
+  let inputs_bytes = builtin.serialise_data(sanitized_inputs)
 
   CustomTransactionIdBuilder {
     ..self,
@@ -141,6 +148,8 @@ fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: L
 }
 
 fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
+  // find redeemers created with the VerifySignatureChunk and drop the signature chunk
+  
   let redeemers_bytes = builtin.serialise_data(redeemers)
 
   CustomTransactionIdBuilder {
@@ -194,14 +203,11 @@ fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: O
   }
 }
 
-
-
 fn build_custom_transaction_id(tx: CustomTransactionIdBuilder) -> CustomTransactionId {
   sha2_256(builtin.serialise_data(tx))
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
-
   let builder = new_custom_transaction_id(tx)
                   |> with_inputs(tx.inputs)
                   |> with_reference_inputs(tx.reference_inputs)
