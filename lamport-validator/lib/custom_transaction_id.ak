@@ -149,8 +149,14 @@ fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: L
 
 fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
   // find redeemers created with the VerifySignatureChunk and drop the signature chunk
-  
-  let redeemers_bytes = builtin.serialise_data(redeemers)
+  let sanitized_redeemers = redeemers |> list.map(fn (redeemer_pair) -> Pair<ScriptPurpose, Redeemer> {
+    // redeemer_pair
+    when redeemer_pair.1st is {
+      ScriptPurpose.Spend(out_ref) -> redeemer_pair
+      _ -> redeemer_pair
+    }
+  }) 
+  let redeemers_bytes = builtin.serialise_data(sanitized_redeemers)
 
   CustomTransactionIdBuilder {
     ..self,
