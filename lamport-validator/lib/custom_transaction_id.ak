@@ -150,18 +150,15 @@ fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: L
 
 fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
   // find redeemers created with the VerifySignatureChunk and drop the signature chunk
-  let sanitized_redeemers = redeemers |> list.map(fn (redeemer_pair) -> Pair<ScriptPurpose, Redeemer> {
+  let sanitized_redeemers = redeemers |> list.map(fn (redeemer_pair) -> ByteArray {
     expect Pair(purpose, redeemer) = redeemer_pair
-    if redeemer is SpendAction {
+    if redeemer is SpendAction  {
       when redeemer is {
-        SpendAction.VerifySignatureChunk(signature_chunk) -> {
-          expect standin : Redeemer = #[0]
-          Pair(purpose, standin)
-        }
-        _ -> redeemer_pair
+        SpendAction.VerifySignatureChunk(signature_chunk) -> builtin.serialise_data(Pair(purpose, #[0]))
+        _ -> builtin.serialise_data(redeemer_pair)
       }
     } else {
-      redeemer_pair
+      builtin.serialise_data(redeemer_pair)
     }
   }) 
   let redeemers_bytes = builtin.serialise_data(sanitized_redeemers)
