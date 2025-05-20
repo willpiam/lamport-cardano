@@ -1,4 +1,4 @@
-use cardano/transaction.{ScriptPurpose, Redeemer, InlineDatum, Output, OutputReference, Transaction, Input}
+use cardano/transaction.{ScriptPurpose, Redeemer, Output, Transaction, Input}
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash, DataHash}
 use cardano/assets.{Lovelace, Value}
@@ -8,7 +8,7 @@ use aiken/collection/dict.{Dict}
 use aiken/collection/list
 use aiken/primitive/bytearray
 use cardano/governance.{Voter, GovernanceActionId, Vote, ProposalProcedure}
-use redeemers.{SpendAction}
+use helpers.{SpendAction}
 
 
 // TODO: come up with a better name than Custom Transaction Id
@@ -153,9 +153,10 @@ fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: L
 fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
   // find redeemers created with the VerifySignatureChunk and drop the signature chunk
   let sanitized_redeemers = redeemers 
-    |> list.map(fn (redeemer_pair) -> ByteArray {
-      expect Pair(purpose, redeemer) = redeemer_pair
-      if redeemer is SpendAction  {
+    |> list.reduce(#[], fn (acc, redeemer_pair) -> ByteArray {
+      // expect Pair(purpose, redeemer) = redeemer_pair
+      let Pair(purpose, redeemer) = redeemer_pair
+      let redeemer_bytes = if redeemer is SpendAction {
         when redeemer is {
           SpendAction.VerifySignatureChunk(signature_chunk) -> builtin.serialise_data(Pair(purpose, #[0]))
           _ -> builtin.serialise_data(redeemer_pair)
@@ -163,9 +164,7 @@ fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpo
       } else {
         builtin.serialise_data(redeemer_pair)
       }
-    })
-    |> list.reduce(#[], fn (acc, redeemer) {
-      acc |> bytearray.concat(redeemer)
+      bytearray.concat(acc, redeemer_bytes)
     })
 
   CustomTransactionIdBuilder {

@@ -1,4 +1,4 @@
-use aiken/collection/dict
+use aiken/collection/dict.{Dict}
 use aiken/collection/list
 use cardano/assets.{PolicyId, AssetName}
 use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction, Input}
@@ -8,112 +8,12 @@ use aiken/primitive/int
 use aiken/crypto.{sha2_256}
 use verify_lamport.{LamportPublicKey, verify_lamport}
 use merkle.{ProofNode, verify_merkle_proof}
-use redeemers.{SpendAction}
+use helpers.{SpendAction, MintAction, PublicKeyChunk, State, 
+compare_signed_message_chunk, find_output_with_asset, hash_chunk, check_remaining_uninitialized}
+use mint.{handle_mint, handle_burn}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
-
-pub type MintAction {
-  Mint
-  Burn
-}
-
-// pub type SpendAction {
-//   InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
-//   VerifySignatureChunk (List<ByteArray>) // signature chunk
-//   VerifyFullSignature (ByteArray) // message
-// }
-
-pub type PublicKeyChunk = LamportPublicKey
-
-pub type State {
-  Initial (Int, ByteArray) // tokens not initalized, public key merkle root
-  PreparedPublicKeyChunk (Int, PublicKeyChunk) // position, chunk
-  SignedMessageChunk (Int, ByteArray) // position, chunk
-}
-
-/// compare_signed_message_chunk
-/// an ordering for SignedMessageChunks based on the Int (position) value 
-/// used in: VerifyFullSignature 
-pub fn compare_signed_message_chunk(left: State, right: State) -> Ordering {
-  expect SignedMessageChunk(left_position, _) = left
-  expect SignedMessageChunk(right_position, _) = right
-  if left_position < right_position {
-    Less
-  } else if left_position > right_position {
-    Greater
-  } else {
-    Equal
-  }
-}
-
-/// find_output_with_asset
-/// given a policy id, an asset name, and a list of outputs
-/// return an output from the list which has the provided policy id and asset name
-/// used in: InitializePublicKeyChunk, VerifySignatureChunk, VerifyFullSignature
-pub fn find_output_with_asset(policy_id : PolicyId, asset_name : AssetName, outputs : List<Output>) -> Option<Output> {
-  outputs
-    |> list.find(
-        fn(output) {
-          let amount = output.value
-            |> assets.tokens(policy_id)
-            |> dict.get(asset_name)
-
-          when amount is {
-            Some(1) -> True
-            _ -> False
-          }
-        },
-      )
-}
-
-
-/// check_remaining_uninitialized
-/// check that the remaining uninitialized tokens are 
-/// in a single utxo with the expected datum
-/// used in: InitializePublicKeyChunk 
-pub fn check_remaining_uninitialized(
-  outputs : List<Output>, 
-  policy_id : PolicyId, 
-  expected_asset_name : AssetName, 
-  uninitialized_tokens_input : Input,
-  original_merkle_root : ByteArray,
-  original_tokens_not_initalized : Int,
-   ) -> Bool {
-  let outputs_with_policy_tokens = list.filter(outputs, fn(output) {
-      False == (output.value 
-        |> assets.tokens(policy_id) 
-        |> dict.is_empty())
-  })
-  expect Some(remaining_uninitialized_output) = list.find(outputs_with_policy_tokens, fn(output) {
-    // get the one that doesn't have the expected asset name
-    0 == assets.quantity_of(output.value, policy_id, expected_asset_name)
-  })
-  expect InlineDatum(next_raw_uninitialized_datum) = remaining_uninitialized_output.datum
-  expect Initial(tokens_not_initalized, public_key_merkle_root) = next_raw_uninitialized_datum
-
-  and {
-    // uninitialized tokens must go to same address
-    remaining_uninitialized_output.address == uninitialized_tokens_input.output.address,
-    // there must be 2 outputs with policy id tokens
-    2 == list.length(outputs_with_policy_tokens),
-    // counter on remaining uninitialized output must be 1 less than counter on input
-    tokens_not_initalized == original_tokens_not_initalized - 1,
-    // merkle root must be unchanged
-    public_key_merkle_root == original_merkle_root,
-  }
-}
-
-/// hash_chunk
-/// reduce a PublickKeyChunk down to a single bytearray and hash it
-/// used in: InitializePublicKeyChunk
-pub fn hash_chunk(chunk : PublicKeyChunk) -> ByteArray {
-  let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
-  let flat_chunk = list.reduce(chunk_elements, #[], fn(acc, curr) {
-    bytearray.concat(acc, curr)
-  })
-  sha2_256(flat_chunk)
-}
 
 validator manysteplamport(_version: Int) {
   spend(
@@ -135,13 +35,13 @@ validator manysteplamport(_version: Int) {
         expect Script(locked_script) = uninitialized_tokens_input.output.address.payment_credential
         let policy_id = locked_script
 
-        expect Initial(tokens_not_initalized, public_key_merkle_root) = state 
+        expect State.Initial(tokens_not_initalized, public_key_merkle_root) = state 
      
         // find the output with the initialized token
         let expected_asset_name = bytearray.from_string(int.to_string(position + 1))
         expect Some(initialized_output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
         expect InlineDatum(initialized_datum) = initialized_output.datum
-        expect PreparedPublicKeyChunk (chunk_position, chunk) = initialized_datum
+        expect State.PreparedPublicKeyChunk (chunk_position, chunk) = initialized_datum
 
         let chunk_elements = list.concat(chunk.pk_left, chunk.pk_right)
 
@@ -170,7 +70,7 @@ validator manysteplamport(_version: Int) {
       }
       SpendAction.VerifySignatureChunk(signature_chunk) -> {
         // verify a chunk of a signature against a chunk of the message hash and a chunk of the public key
-        expect PreparedPublicKeyChunk (pubkey_chunk_position, pubkey_chunk) = state
+        expect State.PreparedPublicKeyChunk (pubkey_chunk_position, pubkey_chunk) = state
 
         expect Some(public_key_chunk_input) = inputs |> list.find(fn(input) { input.output_reference == target_input_reference })
         let expected_asset_name = bytearray.from_string(int.to_string(pubkey_chunk_position + 1))
@@ -178,7 +78,7 @@ validator manysteplamport(_version: Int) {
 
         expect Some(output) = find_output_with_asset(policy_id, expected_asset_name, outputs)
         expect InlineDatum(output_datum) = output.datum
-        expect SignedMessageChunk(message_position, message_chunk) = output_datum
+        expect State.SignedMessageChunk(message_position, message_chunk) = output_datum
 
         and {
           // signature chunk utxo must remain on the address of this validator
@@ -214,12 +114,12 @@ validator manysteplamport(_version: Int) {
           |> list.map(fn(asset_name) {
             expect Some(output) = find_output_with_asset(policy_id, asset_name, list.map(inputs, fn(input) { input.output }))
             expect InlineDatum(output_datum) = output.datum
-            expect SignedMessageChunk(message_position, message_chunk) = output_datum
-            SignedMessageChunk(message_position, message_chunk)
+            expect State.SignedMessageChunk(message_position, message_chunk) = output_datum
+            State.SignedMessageChunk(message_position, message_chunk)
           }) 
           |> list.sort(compare_signed_message_chunk)
           |> list.map(fn(chunk)  { // todo: put this logic into the reduce step so we can do one less pass
-            expect SignedMessageChunk(_, part) = chunk
+            expect State.SignedMessageChunk(_, part) = chunk
             part
           })
           |> list.reduce(#[], bytearray.concat)
@@ -244,52 +144,10 @@ validator manysteplamport(_version: Int) {
     let Transaction { mint, outputs, .. } = self
 
     let mint_dict = mint |> assets.tokens(policy_id)
-    let mint_list = mint_dict |> dict.to_pairs()
 
     when action is {
-      Mint -> {
-        // mint 8 tokens and send to this validator on a single output
-        // output datum must hold merkle root
-        // amount minted of each token must be 1
-        expect Some(output) = outputs |> list.find(fn(output) {
-          8 == (output.value
-            |> assets.tokens(policy_id)
-            |> dict.to_pairs()
-            |> list.length())
-        })
-        expect InlineDatum(datum) = output.datum
-        expect Initial(tokens_not_initalized, public_key_merkle_root) = datum
-
-        expect Script(locked_script) = output.address.payment_credential
-        and {
-          // none have been initialized yet
-          tokens_not_initalized == 8,
-          // merkle root length must be 32 bytes
-          bytearray.length(public_key_merkle_root) == 32,
-          // mint 8 tokens
-          list.length(mint_list) == 8,
-          // must lock in same script as mint
-          policy_id == locked_script,
-          // minted tokens must have expected names and amounts
-          dict.get(mint_dict, "1") == Some(1),
-          dict.get(mint_dict, "2") == Some(1),
-          dict.get(mint_dict, "3") == Some(1),
-          dict.get(mint_dict, "4") == Some(1),
-          dict.get(mint_dict, "5") == Some(1),
-          dict.get(mint_dict, "6") == Some(1),
-          dict.get(mint_dict, "7") == Some(1),
-          dict.get(mint_dict, "8") == Some(1),
-        }
-      }
-      Burn -> and {
-        // all 8 tokens must be present
-        list.length(mint_list) == 8,
-        // mint must be entierly negative
-        mint_list |> list.all(fn(token) {
-          let Pair(_, amount) = token
-          amount == -1 
-        }),
-      }
+      MintAction.Mint -> handle_mint(outputs, policy_id, mint_dict)
+      MintAction.Burn -> handle_burn(mint_dict |> dict.to_pairs())
     }
   }
 
