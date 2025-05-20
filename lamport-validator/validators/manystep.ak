@@ -8,6 +8,7 @@ use aiken/primitive/int
 use aiken/crypto.{sha2_256}
 use verify_lamport.{LamportPublicKey, verify_lamport}
 use merkle.{ProofNode, verify_merkle_proof}
+use redeemers.{SpendAction}
 
 /// Verify a full lamport signature by breaking it into multiple pieces
 /// this demo/experiment is a work in progress and not yet finished
@@ -17,11 +18,11 @@ pub type MintAction {
   Burn
 }
 
-pub type SpendAction {
-  InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
-  VerifySignatureChunk (List<ByteArray>) // signature chunk
-  VerifyFullSignature (ByteArray) // message
-}
+// pub type SpendAction {
+//   InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
+//   VerifySignatureChunk (List<ByteArray>) // signature chunk
+//   VerifyFullSignature (ByteArray) // message
+// }
 
 pub type PublicKeyChunk = LamportPublicKey
 
@@ -125,7 +126,7 @@ validator manysteplamport(_version: Int) {
     expect Some(state) = datum
 
     when action is {
-      InitializePublicKeyChunk (merkle_proof, position, leaf_hash) -> {
+      SpendAction.InitializePublicKeyChunk (merkle_proof, position, leaf_hash) -> {
         // send 1 token back to this validator on an output with a public key chunk which fits in the merkle tree
         // send the rest of the tokens to the same validator but on a single output
 
@@ -167,7 +168,7 @@ validator manysteplamport(_version: Int) {
           }
         }
       }
-      VerifySignatureChunk(signature_chunk) -> {
+      SpendAction.VerifySignatureChunk(signature_chunk) -> {
         // verify a chunk of a signature against a chunk of the message hash and a chunk of the public key
         expect PreparedPublicKeyChunk (pubkey_chunk_position, pubkey_chunk) = state
 
@@ -199,7 +200,7 @@ validator manysteplamport(_version: Int) {
           verify_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
         }
       }
-      VerifyFullSignature(message) -> {
+      SpendAction.VerifyFullSignature(message) -> {
         // verify the full signature... all 8 tokens are present
         // concatinate all the chunks from the message hash and verify it equals the expected value
 
