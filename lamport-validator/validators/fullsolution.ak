@@ -10,12 +10,12 @@ use verify_lamport.{LamportPublicKey, verify_lamport}
 use merkle.{ProofNode, verify_merkle_proof}
 use helpers.{SpendAction, MintAction, PublicKeyChunk, State, 
 compare_signed_message_chunk, find_output_with_asset, hash_chunk, check_remaining_uninitialized}
+use custom_transaction_id.{custom_transaction_id}
 
-/// Verify a full lamport signature by breaking it into multiple pieces
-/// this demo/experiment is a work in progress and not yet finished
+/// Verify a full lamport signature of a custom transaction id
 
 
-validator manysteplamport(_version: Int) {
+validator lamport_transaction(_version: Int) {
   spend(
     datum: Option<State>,
     action: SpendAction,
@@ -100,7 +100,7 @@ validator manysteplamport(_version: Int) {
           verify_lamport(0, 32, message_chunk, pubkey_chunk, signature_chunk),
         }
       }
-      SpendAction.VerifyFullSignature(message) -> {
+      SpendAction.VerifyFullSignature(_) -> {
         // verify the full signature... all 8 tokens are present
         // concatinate all the chunks from the message hash and verify it equals the expected value
 
@@ -126,7 +126,7 @@ validator manysteplamport(_version: Int) {
 
         and {
           // signed message hash must match the expected message hash
-          signed_message_hash == sha2_256(message),
+          signed_message_hash == custom_transaction_id(self),
           // there must be at least 8 inputs (one for each token + whatever else the user is doing)
           list.length(inputs) >= 8,
           // must burn the tokens
