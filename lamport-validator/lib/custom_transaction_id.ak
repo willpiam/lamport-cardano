@@ -6,6 +6,7 @@ use cardano/certificate.{Certificate}
 use cardano/address.{Credential}
 use aiken/collection/dict.{Dict}
 use aiken/collection/list
+use aiken/primitive/bytearray
 use cardano/governance.{Voter, GovernanceActionId, Vote, ProposalProcedure}
 use redeemers.{SpendAction}
 
@@ -151,29 +152,25 @@ fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: L
 
 fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
   // find redeemers created with the VerifySignatureChunk and drop the signature chunk
-  let sanitized_redeemers = redeemers |> list.map(fn (redeemer_pair) -> ByteArray {
-
-
-    when redeemer_pair is {
-      Pair(ScriptPurpose.Spend(out_ref), redeemer) -> builtin.serialise_data(Pair(ScriptPurpose.Spend(out_ref), #[0]))
-      _ -> builtin.serialise_data(redeemer_pair)
-    }
-    // expect Pair(purpose, redeemer) = redeemer_pair
-
-    // if redeemer is SpendAction  {
-    //   when redeemer is {
-    //     SpendAction.VerifySignatureChunk(signature_chunk) -> builtin.serialise_data(Pair(purpose, #[0]))
-    //     _ -> builtin.serialise_data(redeemer_pair)
-    //   }
-    // } else {
-    //   builtin.serialise_data(redeemer_pair)
-    // }
-  }) 
-  let redeemers_bytes = builtin.serialise_data(sanitized_redeemers)
+  let sanitized_redeemers = redeemers 
+    |> list.map(fn (redeemer_pair) -> ByteArray {
+      expect Pair(purpose, redeemer) = redeemer_pair
+      if redeemer is SpendAction  {
+        when redeemer is {
+          SpendAction.VerifySignatureChunk(signature_chunk) -> builtin.serialise_data(Pair(purpose, #[0]))
+          _ -> builtin.serialise_data(redeemer_pair)
+        }
+      } else {
+        builtin.serialise_data(redeemer_pair)
+      }
+    })
+    |> list.reduce(#[], fn (acc, redeemer) {
+      acc |> bytearray.concat(redeemer)
+    })
 
   CustomTransactionIdBuilder {
     ..self,
-    redeemers: Some(redeemers_bytes)
+    redeemers: Some(sanitized_redeemers)
   }
 }
 
