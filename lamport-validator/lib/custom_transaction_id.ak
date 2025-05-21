@@ -53,7 +53,7 @@ type CustomTransactionIdBuilder {
 
 type CustomTransactionId = Hash<Sha2_256, ByteArray>
 
-fn new_custom_transaction_id(tx: Transaction) -> CustomTransactionIdBuilder {
+fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
   CustomTransactionIdBuilder { 
     inputs: None, 
     reference_inputs: None,
@@ -223,7 +223,7 @@ fn build_custom_transaction_id(tx: CustomTransactionIdBuilder) -> CustomTransact
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
-  let builder = new_custom_transaction_id(tx)
+  let builder = new_custom_transaction_id()
                   |> with_inputs(tx.inputs)
                   |> with_reference_inputs(tx.reference_inputs)
                   |> with_outputs(tx.outputs)
