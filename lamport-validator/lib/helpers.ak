@@ -7,7 +7,6 @@ use aiken/collection/list
 use aiken/primitive/bytearray
 use aiken/crypto.{sha2_256}
 
-
 pub type SpendAction {
   InitializePublicKeyChunk (List<ProofNode>, Int, ByteArray) // merkle proof, position, leaf hash
   VerifySignatureChunk (List<ByteArray>) // signature chunk

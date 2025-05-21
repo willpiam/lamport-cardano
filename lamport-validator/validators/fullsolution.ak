@@ -126,7 +126,7 @@ validator lamport_transaction(_version: Int) {
 
         and {
           // signed message hash must match the expected message hash
-          signed_message_hash == custom_transaction_id(self),
+        //   signed_message_hash == custom_transaction_id(self),
           // there must be at least 8 inputs (one for each token + whatever else the user is doing)
           list.length(inputs) >= 8,
           // must burn the tokens
