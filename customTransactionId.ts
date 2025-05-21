@@ -6,46 +6,18 @@
 
 */
 
+import { fromHex } from "npm:@blaze-cardano/core";
 import { sha256 } from "./sha256.ts";
+import {
+  assertEquals,
+  assertExists,
+  assertRejects,
+  assert,
+} from "@std/assert";
+import { Constr, Data } from "npm:@lucid-evolution/lucid";
 
-
-// type CustomTransactionIdBuilder = Partial<{
-//     inputs: Uint8Array,
-//     reference_inputs: Uint8Array,
-//     outputs: Uint8Array,
-//     fee: Uint8Array,
-//     mint: Uint8Array,
-//     certificates: Uint8Array,
-//     withdrawals: Uint8Array,
-//     extra_signatories: Uint8Array,
-//     redeemers: Uint8Array,
-//     datums: Uint8Array,
-//     votes: Uint8Array,
-//     proposal_procedures: Uint8Array,
-//     current_treasury_amount: Uint8Array,
-//     treasury_donation: Uint8Array,
-// }>
 
 export type CustomTransactionId = Uint8Array
-
-// const newCustomTransactionId = () : CustomTransactionIdBuilder => {
-//     return {}
-// }
-
-// const withInputs = (builder: CustomTransactionIdBuilder, inputs : any[]) : CustomTransactionIdBuilder => {
-//     return {
-//         ...builder,
-//         // inputs:
-//     }
-// }
-
-// const buildCustomTransactionId = async (builder: CustomTransactionIdBuilder) : CustomTransactionId => {
-//     // serialized
-//     const serialized = new Uint8Array()
-
-//     // hashed
-//     return await sha256(serialized)
-// }
 
 export class CustomTransactionIdBuilder {
     private inputs: Uint8Array | undefined
@@ -65,21 +37,71 @@ export class CustomTransactionIdBuilder {
 
     constructor() {}
 
+    /*
+        withInputs
+        @in list of objects with a transaction id (hex string) and an index
+
+        Given the utxo objects you need to construct an object to mirror aikens "Output" type
+        The output type is defined as:
+
+        ```
+        Output {
+            address: Address,
+            value: Value,
+            datum: Datum,
+            reference_script: Option<ScriptHash>,
+        }
+        ```
+
+        After a list of these object is constructed you need to serialize it using the mirror of builtin.serialise_data
+
+        This function is the off-chain mirror of the `with_inputs` function in the `custom_transaction_id.ak` file
+    */
     withInputs(inputs: any[]) {
         // TODO: process inputs before adding them to the builder
         this.inputs = new Uint8Array()
+
+        return this
+    }
+
+    withReferenceInputs(reference_inputs: any[]) {
+        // TODO: process reference_inputs before adding them to the builder
+        this.reference_inputs = new Uint8Array()
+        return this
+    }
+   
+    withOutputs(outputs: any[]) {
+        // TODO: process outputs before adding them to the builder
+        this.outputs = new Uint8Array()
+        return this
+    }
+
+    withFee(fee: number) {
+        const serializedFee = Data.to(new Constr(0, [BigInt(fee)]))
+        this.fee = fromHex(serializedFee)
         return this
     }
 
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
+        assert([
+            this.inputs,
+            this.reference_inputs,
+            this.outputs,
+            this.fee,
+            // this.mint,
+            // this.certificates,
+            // this.withdrawals,
+            // this.extra_signatories,
+            // this.redeemers,
+            // this.datums,
+            // this.votes,
+            // this.proposal_procedures,
+            // this.current_treasury_amount,
+            // this.treasury_donation,
+        ].every(element => element !== undefined), "All fields must be defined")
+
         const serialized = new Uint8Array()
         return await sha256(serialized)
     }
 }
-
-// export const customTransactionId = async (tx: Transaction) : Promise<CustomTransactionId> => {
-//     const builder = newCustomTransactionId()
-//     return await buildCustomTransactionId(builder)
-// }
-

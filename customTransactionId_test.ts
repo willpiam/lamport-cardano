@@ -1,3 +1,4 @@
+import { assertExists } from "@std/assert/exists";
 import { CustomTransactionIdBuilder, CustomTransactionId } from "./customTransactionId.ts";
 import {
   applyParamsToScript,
@@ -31,8 +32,14 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async () =>
         })
         .complete()
 
+    const txObj : any = tx.toJSON()
+    console.log(txObj)
+
     const customTransactionIdBuilder = new CustomTransactionIdBuilder()
-        .withInputs([tx])
+        .withInputs(txObj.body.inputs)
+        .withReferenceInputs(txObj.body.reference_inputs)
+        .withOutputs(txObj.body.outputs)
+        .withFee(txObj.body.fee)
 
     const customTransactionId = await customTransactionIdBuilder.build()
 
