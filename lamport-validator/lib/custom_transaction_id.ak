@@ -218,8 +218,29 @@ fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: O
   }
 }
 
-fn build_custom_transaction_id(tx: CustomTransactionIdBuilder) -> CustomTransactionId {
-  sha2_256(builtin.serialise_data(tx))
+fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
+  let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
+    expect Some(element) = b
+    bytearray.concat(a, element)
+  }
+
+  expect Some(inputs) = builder.inputs
+  let blob = inputs 
+    |> attach(builder.reference_inputs)
+    |> attach(builder.outputs)
+    |> attach(builder.fee)
+    |> attach(builder.mint)
+    |> attach(builder.certificates)
+    |> attach(builder.withdrawals)
+    |> attach(builder.extra_signatories)
+    |> attach(builder.redeemers)
+    |> attach(builder.datums)
+    |> attach(builder.votes)
+    |> attach(builder.proposal_procedures)
+    |> attach(builder.current_treasury_amount)
+    |> attach(builder.treasury_donation)
+
+  sha2_256(blob)
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
