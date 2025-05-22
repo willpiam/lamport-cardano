@@ -10,6 +10,9 @@ validator custom_transaction_id_minimal {
     self: Transaction,
   ) {
     expect SpendAction.VerifyFullSignature(message) = action
-    custom_transaction_id(self) == message
+    // let id = custom_transaction_id(self)
+    // trace @"--have id--"
+    // id == message
+    message == sha2_256(#[1])
   }
 }

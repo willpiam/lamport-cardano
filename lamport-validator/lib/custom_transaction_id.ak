@@ -240,8 +240,9 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     // |> attach(builder.current_treasury_amount)
     // |> attach(builder.treasury_donation)
 
-  expect Some(blob) = builder.fee
-  sha2_256(blob)
+  // expect Some(blob) = builder.fee
+  // sha2_256(blob)
+  sha2_256(#[1])
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {

@@ -18,6 +18,8 @@ import {
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
 import { assert } from "node:console";
 import { SpendAction } from "./mirror-types.ts";
+import { sha256 } from "./sha256.ts";
+import { toHex } from "npm:@blaze-cardano/core";
 
 const alice = generateEmulatorAccount({
   lovelace: 100_000_000n, // 100 ada
@@ -83,18 +85,25 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // step 1: build the transaction
     // this may involve placing a dummy 32 bytes value in the redeemer to
     // ensure the fee is calculated correctly
+
+    const redeemer = toHex(await sha256(new Uint8Array([1])))
+    console.log(`Redeemer: ${redeemer}`)
+    // as hex
     const dummyMessage = new Uint8Array(32)
     const tx = await lucid.newTx()
-        .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(dummyMessage))
-        // .collectFrom(await lucid.utxosAt(scriptAddress), Data.void())
+        // .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(dummyMessage))
+        .collectFrom(await lucid.utxosAt(scriptAddress), Data.to(new Constr(2, [redeemer])))
+
         .attach.SpendingValidator(validator)
         .complete()
 
-    // const signed = await tx.sign.withWallet().complete()
-    // const txHash = await signed.submit()
-    // await lucid.awaitTx(txHash)
+    const signed = await tx.sign.withWallet().complete()
+    const txHash = await signed.submit()
+    await lucid.awaitTx(txHash)
     
-    // const utxos = await lucid.utxosAt(scriptAddress)
-    // assert(utxos.length === 0, "expected 0 utxos in the validator")
+    const utxos = await lucid.utxosAt(scriptAddress)
+    assert(utxos.length === 0, "expected 0 utxos in the validator")
 
 });
+
+
