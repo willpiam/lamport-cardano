@@ -13,6 +13,7 @@ validator custom_transaction_id_minimal {
     // let id = custom_transaction_id(self)
     // trace @"--have id--"
     // id == message
-    message == sha2_256(#[1])
+    // message == sha2_256(#[1])
+    message == custom_transaction_id(self)
   }
 }
