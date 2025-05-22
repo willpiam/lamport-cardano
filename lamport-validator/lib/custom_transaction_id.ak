@@ -158,7 +158,7 @@ fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpo
       let Pair(purpose, redeemer) = redeemer_pair
       let redeemer_bytes = if redeemer is SpendAction {
         when redeemer is {
-          SpendAction.VerifySignatureChunk(signature_chunk) -> builtin.serialise_data(Pair(purpose, #[0]))
+          SpendAction.VerifySignatureChunk(_) | SpendAction.VerifyFullSignature(_) -> builtin.serialise_data(Pair(purpose, #[0]))
           _ -> builtin.serialise_data(redeemer_pair)
         }
       } else {
@@ -224,22 +224,23 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     bytearray.concat(a, element)
   }
 
-  expect Some(inputs) = builder.inputs
-  let blob = inputs 
-    |> attach(builder.reference_inputs)
-    |> attach(builder.outputs)
-    |> attach(builder.fee)
-    |> attach(builder.mint)
-    |> attach(builder.certificates)
-    |> attach(builder.withdrawals)
-    |> attach(builder.extra_signatories)
-    |> attach(builder.redeemers)
-    |> attach(builder.datums)
-    |> attach(builder.votes)
-    |> attach(builder.proposal_procedures)
-    |> attach(builder.current_treasury_amount)
-    |> attach(builder.treasury_donation)
+  // expect Some(inputs) = builder.inputs
+  // let blob = inputs 
+    // |> attach(builder.reference_inputs)
+    // |> attach(builder.outputs)
+    // |> attach(builder.fee)
+    // |> attach(builder.mint)
+    // |> attach(builder.certificates)
+    // |> attach(builder.withdrawals)
+    // |> attach(builder.extra_signatories)
+    // |> attach(builder.redeemers)
+    // |> attach(builder.datums)
+    // |> attach(builder.votes)
+    // |> attach(builder.proposal_procedures)
+    // |> attach(builder.current_treasury_amount)
+    // |> attach(builder.treasury_donation)
 
+  expect Some(blob) = builder.fee
   sha2_256(blob)
 }
 

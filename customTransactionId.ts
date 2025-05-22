@@ -84,10 +84,11 @@ export class CustomTransactionIdBuilder {
 
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
+        assertExists(this.fee, "Fee must be defined")
         assert([
-            this.inputs,
-            this.reference_inputs,
-            this.outputs,
+            // this.inputs,
+            // this.reference_inputs,
+            // this.outputs,
             this.fee,
             // this.mint,
             // this.certificates,
@@ -101,7 +102,8 @@ export class CustomTransactionIdBuilder {
             // this.treasury_donation,
         ].every(element => element !== undefined), "All fields must be defined")
 
-        const serialized = new Uint8Array()
+        // const serialized = new Uint8Array()
+        const serialized = this.fee
         return await sha256(serialized)
     }
 }

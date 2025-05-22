@@ -27,6 +27,7 @@ import { LamportPublicKeyChunk, MultiStepLamport } from "./MultiStepLamport.ts";
 import { MerkleTree, ProofNode } from "./MerkleTree.ts";
 import { sha256 } from "./sha256.ts";
 import { flipBitInSignature } from "./testHelpers.ts";
+import { MintAction, SpendAction, State } from "./mirror-types.ts";
 
 // Setup test accounts
 const alice = generateEmulatorAccount({
@@ -65,58 +66,58 @@ const scriptAddress = validatorToAddress(
   getAddressDetails(aliceAddress).stakeCredential,
 );
 
-const MintAction = {
-  Mint: Data.to(new Constr(0, [])),
-  Burn: Data.to(new Constr(1, [])),
-};
+// const MintAction = {
+//   Mint: Data.to(new Constr(0, [])),
+//   Burn: Data.to(new Constr(1, [])),
+// };
 
-const State = {
-  Initial: (tokensNotInitialized: bigint, publicKeyMerkleRoot: Uint8Array) =>
-    Data.to(
-      new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)]),
-    ),
-  PreparedPublicKeyChunk: (
-    chunkPosition: bigint,
-    chunk: LamportPublicKeyChunk,
-  ) =>
-    Data.to(
-      new Constr(1, [
-        chunkPosition,
-        new Constr(0, [chunk[0].map(toHex), chunk[1].map(toHex)]),
-      ]),
-    ),
-  SignedMessageChunk: (messagePosition: bigint, messageChunk: Uint8Array) =>
-    Data.to(
-      new Constr(2, [messagePosition, toHex(messageChunk)]),
-    ),
-};
+// const State = {
+//   Initial: (tokensNotInitialized: bigint, publicKeyMerkleRoot: Uint8Array) =>
+//     Data.to(
+//       new Constr(0, [tokensNotInitialized, toHex(publicKeyMerkleRoot)]),
+//     ),
+//   PreparedPublicKeyChunk: (
+//     chunkPosition: bigint,
+//     chunk: LamportPublicKeyChunk,
+//   ) =>
+//     Data.to(
+//       new Constr(1, [
+//         chunkPosition,
+//         new Constr(0, [chunk[0].map(toHex), chunk[1].map(toHex)]),
+//       ]),
+//     ),
+//   SignedMessageChunk: (messagePosition: bigint, messageChunk: Uint8Array) =>
+//     Data.to(
+//       new Constr(2, [messagePosition, toHex(messageChunk)]),
+//     ),
+// };
 
-const Bool = {
-  False: new Constr(0, []),
-  True: new Constr(1, []),
-};
+// const Bool = {
+//   False: new Constr(0, []),
+//   True: new Constr(1, []),
+// };
 
-const ProofNodeData = (proofNode: ProofNode) =>
-  new Constr(0, [
-    toHex(proofNode.hash),
-    proofNode.siblingOnLeft ? Bool.True : Bool.False,
-  ]);
-const SpendAction = {
-  InitializePublicKeyChunk: (
-    merkleProof: ProofNode[],
-    position: bigint,
-    leafHash: Uint8Array,
-  ) =>
-    Data.to(
-      new Constr(0, [
-        merkleProof.map(ProofNodeData),
-        position,
-        toHex(leafHash),
-      ]),
-    ),
-  VerifySignatureChunk: (signatureChunk: Uint8Array[]) => Data.to(new Constr(1, [signatureChunk.map(toHex)])),
-  VerifyFullSignature: (message: Uint8Array) => Data.to(new Constr(2, [toHex(message)])),
-};
+// const ProofNodeData = (proofNode: ProofNode) =>
+//   new Constr(0, [
+//     toHex(proofNode.hash),
+//     proofNode.siblingOnLeft ? Bool.True : Bool.False,
+//   ]);
+// const SpendAction = {
+//   InitializePublicKeyChunk: (
+//     merkleProof: ProofNode[],
+//     position: bigint,
+//     leafHash: Uint8Array,
+//   ) =>
+//     Data.to(
+//       new Constr(0, [
+//         merkleProof.map(ProofNodeData),
+//         position,
+//         toHex(leafHash),
+//       ]),
+//     ),
+//   VerifySignatureChunk: (signatureChunk: Uint8Array[]) => Data.to(new Constr(1, [signatureChunk.map(toHex)])),
+//   VerifyFullSignature: (message: Uint8Array) => Data.to(new Constr(2, [toHex(message)])),
+// };
 
 Deno.test("Off-chain logic for lamport transaction", async () => {
   const msLamport = new MultiStepLamport(await generateSeed());

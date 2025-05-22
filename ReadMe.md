@@ -120,6 +120,10 @@ A class derived from the Lamport class (defined in Lamport.ts) with added functi
 **Note to self... we should probably be able to get ride of all these "position" values in the datums/redeemers and only use the number found in the tokens name. Or we could consider using the token name to serve some other role**
 
 
+### Another thing.. this is how I've been running my recent tests
+
+    deno test --allow-read --fail-fast --filter "Custom Transaction Id"
+
 ## Questions
 
 ### Making an account
