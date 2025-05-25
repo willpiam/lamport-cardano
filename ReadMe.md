@@ -124,6 +124,10 @@ A class derived from the Lamport class (defined in Lamport.ts) with added functi
 
     deno test --allow-read --fail-fast --filter "Custom Transaction Id"
 
+### quick insight into number of tokens deciopn
+
+it may be very smart to try to reduce the number of "steps" as this would allow you to do this in less transaction. So what is the optimal number of chunks to split the system into? Well for every chunk removed you save 2 transactions (initializing the token with the public key + verifying part of a signature against that public key). Its important to note that this implementation always expects the checking of the full signature in a seperate step. This means that in that last transaction you don't have the overhead of actually checking a lamoprt key. Its probably worth trying to reduce the number of chunks to just enough that transactions always suceed.
+
 ## Questions
 
 ### Making an account

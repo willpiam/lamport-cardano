@@ -13,6 +13,7 @@ import {
   paymentCredentialOf,
   scriptFromNative,
   SpendingValidator,
+  unixTimeToSlot,
   validatorToAddress,
 } from "npm:@lucid-evolution/lucid";
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
@@ -89,11 +90,27 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // to start we will assert only that the transaction must mint the same
     // values as the dummy transaction
     // add a very simple policy to mint a token
+    const mintingPolicy = scriptFromNative({
+        type: "all",
+        scripts: [
+            { type: "sig", keyHash: paymentCredentialOf(await lucid.wallet().address()).hash },
+        ],
+    });
+    const policyId = mintingPolicyToId(mintingPolicy);
+
+
     console.log(`%cAbout to create dummy transaction`, "color: yellow")
-    const dummyTx = await lucid.newTx().complete()
+
+    const dummyTx = await lucid
+        .newTx()
+        .mintAssets({
+            [policyId + fromText("MyToken")]: 1n,
+        })
+        .attach.MintingPolicy(mintingPolicy)
+        .complete();
     const dummyTxObj : any = dummyTx.toJSON()
 
-    console.log("dummyTxObj.body.reference_inputs", dummyTxObj.body.reference_inputs)
+    console.log("dummyTxObj.body.reference_inputs", Object.keys(dummyTxObj.body.mint))
 
     // const customTransactionIdBuilder = new CustomTransactionIdBuilder()
     //     // .withInputs(dummyTxObj.body.inputs)
@@ -108,6 +125,10 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
         .attach.SpendingValidator(validator)
+        .mintAssets({
+            [policyId + fromText("MyToken")]: 1n,
+        })
+        .attach.MintingPolicy(mintingPolicy)
         .complete()
 
     const signed = await tx.sign.withWallet().complete()
