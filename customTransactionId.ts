@@ -85,7 +85,13 @@ export class CustomTransactionIdBuilder {
     }
 
     withMint(mint: any) {
-
+        // this.mint = fromHex(Data.to(new Constr(0, [mint])))
+        const mintData = Data.fromJson(mint)
+        console.log("%cSTUB:withMint: mintData", "color: orange", mintData)
+        // this.mint = fromHex(Data.fromJson(mint))
+        console.log("%cSTUB:withMint: mint", "color: orange", mint)
+        this.mint = new Uint8Array()
+        console.log("%cSTUB:withMint: this.mint", "color: orange", this.mint)
         return this
     }
 
@@ -113,8 +119,10 @@ export class CustomTransactionIdBuilder {
         // const serialized = this.fee
         // assertExists(this.inputs, "Inputs must be defined")
         // const blob = this.inputs
-        assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
-        const blob = this.reference_inputs
+        // assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
+        // const blob = this.reference_inputs
+        assertExists(this.mint, "Mint must be defined in the build step")
+        const blob = this.mint
         return await sha256(blob)
     }
 }

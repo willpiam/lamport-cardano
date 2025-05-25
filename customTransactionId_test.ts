@@ -30,19 +30,31 @@ const emulator = new Emulator([alice]);
 const lucid = await Lucid(emulator, "Custom");
 lucid.selectWallet.fromSeed(alice.seedPhrase);
 
+const simpleMintingPolicy = scriptFromNative({
+    type: "all",
+    scripts: [
+        { type: "sig", keyHash: paymentCredentialOf(await lucid.wallet().address()).hash },
+    ],
+});
+const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
+
 Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
     const tx = await lucid.newTx()
+        .mintAssets({
+            [simplePolicyId + fromText("MyToken")]: 1n,
+        })
+        .attach.MintingPolicy(simpleMintingPolicy)
         .pay.ToAddress(await lucid.wallet().address(), {
             lovelace: 1_000_000n,
         })
         .complete()
 
     const txObj : any = tx.toJSON()
-    console.log(txObj)
 
     const customTransactionIdBuilder = new CustomTransactionIdBuilder()
-        .withInputs(txObj.body.inputs)
-        .withReferenceInputs(txObj.body.reference_inputs)
+        // .withInputs(txObj.body.inputs)
+        // .withReferenceInputs(txObj.body.reference_inputs)
+        .withMint(txObj.body.mint)
         // .withOutputs(txObj.body.outputs)
         // .withFee(txObj.body.fee)
 
@@ -90,13 +102,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // to start we will assert only that the transaction must mint the same
     // values as the dummy transaction
     // add a very simple policy to mint a token
-    const mintingPolicy = scriptFromNative({
-        type: "all",
-        scripts: [
-            { type: "sig", keyHash: paymentCredentialOf(await lucid.wallet().address()).hash },
-        ],
-    });
-    const policyId = mintingPolicyToId(mintingPolicy);
+  
 
 
     console.log(`%cAbout to create dummy transaction`, "color: yellow")
@@ -104,9 +110,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     const dummyTx = await lucid
         .newTx()
         .mintAssets({
-            [policyId + fromText("MyToken")]: 1n,
+            [simplePolicyId + fromText("MyToken")]: 1n,
         })
-        .attach.MintingPolicy(mintingPolicy)
+        .attach.MintingPolicy(simpleMintingPolicy)
         .complete();
     const dummyTxObj : any = dummyTx.toJSON()
 
@@ -126,9 +132,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
         .attach.SpendingValidator(validator)
         .mintAssets({
-            [policyId + fromText("MyToken")]: 1n,
+            [simplePolicyId + fromText("MyToken")]: 1n,
         })
-        .attach.MintingPolicy(mintingPolicy)
+        .attach.MintingPolicy(simpleMintingPolicy)
         .complete()
 
     const txObj : any = tx.toJSON()

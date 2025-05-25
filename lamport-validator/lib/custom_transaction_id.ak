@@ -226,6 +226,8 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
 
   // // expect Some(inputs) = builder.inputs
   // expect Some(reference_inputs) = builder.reference_inputs
+  expect Some(mint) = builder.mint
+  let blob = mint
   // let blob = reference_inputs 
   //   // |> attach(builder.reference_inputs)
   //   // |> attach(builder.outputs)
@@ -242,11 +244,12 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   // |> attach(builder.treasury_donation)
 
   // // expect Some(blob) = builder.fee
-  // sha2_256(blob)
-  sha2_256(#[1])
+  sha2_256(blob)
+  // sha2_256(#[1])
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
+  // sha2_256(#[1])
   let builder = new_custom_transaction_id()
                   |> with_inputs(tx.inputs)
                   |> with_reference_inputs(tx.reference_inputs)
