@@ -84,6 +84,11 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    withMint(mint: any) {
+
+        return this
+    }
+
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
         // assertExists(this.fee, "Fee must be defined")

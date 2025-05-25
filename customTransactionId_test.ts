@@ -110,7 +110,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .complete();
     const dummyTxObj : any = dummyTx.toJSON()
 
-    console.log("dummyTxObj.body.reference_inputs", Object.keys(dummyTxObj.body.mint))
+    console.log("%cdummyTxObj.body.mint", "color: orange",dummyTxObj.body.mint)
 
     // const customTransactionIdBuilder = new CustomTransactionIdBuilder()
     //     // .withInputs(dummyTxObj.body.inputs)
@@ -130,6 +130,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         })
         .attach.MintingPolicy(mintingPolicy)
         .complete()
+
+    const txObj : any = tx.toJSON()
+    assert(txObj.body.mint === dummyTxObj.body.mint, "mint must be the same on dummy and real transactions")
 
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()
