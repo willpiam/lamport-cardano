@@ -59,14 +59,16 @@ export class CustomTransactionIdBuilder {
     */
     withInputs(inputs: any[]) {
         // TODO: process inputs before adding them to the builder
-        this.inputs = new Uint8Array()
-
+        // this.inputs = new Uint8Array()
+        console.log("STUB:withInputs: inputs.length", inputs.length)
+        // this.inputs = fromHex(Data.to(new Constr(0, [BigInt(inputs.length)])))
+        this.inputs = fromHex(Data.to(new Constr(0, [BigInt(5)])))
         return this
     }
 
     withReferenceInputs(reference_inputs: any[]) {
         // TODO: process reference_inputs before adding them to the builder
-        this.reference_inputs = new Uint8Array()
+        this.reference_inputs = fromHex(Data.to(new Constr(0, [])))
         return this
     }
    
@@ -84,26 +86,30 @@ export class CustomTransactionIdBuilder {
 
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
-        assertExists(this.fee, "Fee must be defined")
-        assert([
-            // this.inputs,
-            // this.reference_inputs,
-            // this.outputs,
-            this.fee,
-            // this.mint,
-            // this.certificates,
-            // this.withdrawals,
-            // this.extra_signatories,
-            // this.redeemers,
-            // this.datums,
-            // this.votes,
-            // this.proposal_procedures,
-            // this.current_treasury_amount,
-            // this.treasury_donation,
-        ].every(element => element !== undefined), "All fields must be defined")
+        // assertExists(this.fee, "Fee must be defined")
+        // assert([
+        //     // this.inputs,
+        //     // this.reference_inputs,
+        //     // this.outputs,
+        //     // this.fee,
+        //     // this.mint,
+        //     // this.certificates,
+        //     // this.withdrawals,
+        //     // this.extra_signatories,
+        //     // this.redeemers,
+        //     // this.datums,
+        //     // this.votes,
+        //     // this.proposal_procedures,
+        //     // this.current_treasury_amount,
+        //     // this.treasury_donation,
+        // ].every(element => element !== undefined), "All fields must be defined")
 
         // const serialized = new Uint8Array()
-        const serialized = this.fee
-        return await sha256(serialized)
+        // const serialized = this.fee
+        // assertExists(this.inputs, "Inputs must be defined")
+        // const blob = this.inputs
+        assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
+        const blob = this.reference_inputs
+        return await sha256(blob)
     }
 }

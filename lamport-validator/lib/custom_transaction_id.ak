@@ -74,12 +74,12 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
 
 fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
   // for each input drop input.output_reference.transaction_id
-  let sanitized_inputs = inputs |> list.map(fn(input) -> ByteArray {
-    let Input {output_reference, output} = input
-    builtin.serialise_data(output)
-  })
+  // let sanitized_inputs = inputs |> list.map(fn(input) -> ByteArray {
+  //   let Input {output_reference, output} = input
+  //   builtin.serialise_data(output)
+  // })
 
-  let inputs_bytes = builtin.serialise_data(sanitized_inputs)
+  let inputs_bytes = builtin.serialise_data(list.length(inputs))
 
   CustomTransactionIdBuilder {
     ..self,
@@ -219,28 +219,29 @@ fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: O
 }
 
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
-  let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
-    expect Some(element) = b
-    bytearray.concat(a, element)
-  }
+  // let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
+  //   expect Some(element) = b
+  //   bytearray.concat(a, element)
+  // }
 
-  // expect Some(inputs) = builder.inputs
-  // let blob = inputs 
-    // |> attach(builder.reference_inputs)
-    // |> attach(builder.outputs)
-    // |> attach(builder.fee)
-    // |> attach(builder.mint)
-    // |> attach(builder.certificates)
-    // |> attach(builder.withdrawals)
-    // |> attach(builder.extra_signatories)
-    // |> attach(builder.redeemers)
-    // |> attach(builder.datums)
-    // |> attach(builder.votes)
-    // |> attach(builder.proposal_procedures)
-    // |> attach(builder.current_treasury_amount)
-    // |> attach(builder.treasury_donation)
+  // // expect Some(inputs) = builder.inputs
+  // expect Some(reference_inputs) = builder.reference_inputs
+  // let blob = reference_inputs 
+  //   // |> attach(builder.reference_inputs)
+  //   // |> attach(builder.outputs)
+  //   // |> attach(builder.fee)
+  //   // |> attach(builder.mint)
+  //   // |> attach(builder.certificates)
+  //   // |> attach(builder.withdrawals)
+  //   // |> attach(builder.extra_signatories)
+  //   // |> attach(builder.redeemers)
+  //   // |> attach(builder.datums)
+  //   // |> attach(builder.votes)
+  //   // |> attach(builder.proposal_procedures)
+  //   // |> attach(builder.current_treasury_amount)
+  //   // |> attach(builder.treasury_donation)
 
-  // expect Some(blob) = builder.fee
+  // // expect Some(blob) = builder.fee
   // sha2_256(blob)
   sha2_256(#[1])
 }

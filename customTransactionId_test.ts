@@ -40,10 +40,10 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
     console.log(txObj)
 
     const customTransactionIdBuilder = new CustomTransactionIdBuilder()
-        // .withInputs(txObj.body.inputs)
-        // .withReferenceInputs(txObj.body.reference_inputs)
+        .withInputs(txObj.body.inputs)
+        .withReferenceInputs(txObj.body.reference_inputs)
         // .withOutputs(txObj.body.outputs)
-        .withFee(txObj.body.fee)
+        // .withFee(txObj.body.fee)
 
     const customTransactionId = await customTransactionIdBuilder.build()
     console.log(customTransactionId)
@@ -80,20 +80,33 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         await lucid.awaitTx(txHash)
         const utxos = await lucid.utxosAt(scriptAddress)
         assert(utxos.length === 1, "expected 1 utxo in the validator")
+        console.log("%clocked 5 ada in the validator", "color: yellow")
     })
 
     // step 1: build the transaction
     // this may involve placing a dummy 32 bytes value in the redeemer to
     // ensure the fee is calculated correctly
+    // to start we will assert only that the transaction must mint the same
+    // values as the dummy transaction
+    // add a very simple policy to mint a token
+    console.log(`%cAbout to create dummy transaction`, "color: yellow")
+    const dummyTx = await lucid.newTx().complete()
+    const dummyTxObj : any = dummyTx.toJSON()
 
-    const redeemer = toHex(await sha256(new Uint8Array([1])))
-    console.log(`Redeemer: ${redeemer}`)
-    // as hex
-    const dummyMessage = new Uint8Array(32)
+    console.log("dummyTxObj.body.reference_inputs", dummyTxObj.body.reference_inputs)
+
+    // const customTransactionIdBuilder = new CustomTransactionIdBuilder()
+    //     // .withInputs(dummyTxObj.body.inputs)
+    //     .withReferenceInputs(dummyTxObj.body.reference_inputs)
+    //     // .withOutputs(txObj.body.outputs)
+    //     // .withFee(txObj.body.fee)
+    
+    // const message = await customTransactionIdBuilder.build()
+    const message = await sha256(new Uint8Array([1]))
+    console.log(`Message: ${toHex(message)}`)
+
     const tx = await lucid.newTx()
-        // .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(dummyMessage))
-        .collectFrom(await lucid.utxosAt(scriptAddress), Data.to(new Constr(2, [redeemer])))
-
+        .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
         .attach.SpendingValidator(validator)
         .complete()
 
