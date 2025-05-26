@@ -122,7 +122,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     console.log(Object.keys(dummyTxObj.body.mint))
     console.log(dummyTxObj.body.mint)
 
-    const preimage = new Uint8Array([1])
+    const preimage = Data.to(Data.fromJson(dummyTxObj.body.mint))
+
+    // const preimage = new Uint8Array([1])
     console.log("%cpreimage", "color: orange", preimage)
     console.log("----------------------------------------------------------------")
     // const message = await sha256(preimage)

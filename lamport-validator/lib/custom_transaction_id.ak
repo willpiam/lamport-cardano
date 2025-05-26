@@ -249,7 +249,14 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
-  sha2_256(#[1])
+  // sha2_256(#[1])
+  tx.mint
+    |> builtin.serialise_data
+    |> sha2_256
+  
+
+
+
   // let builder = new_custom_transaction_id()
   //                 // |> with_inputs(tx.inputs)
   //                 // |> with_reference_inputs(tx.reference_inputs)
