@@ -33,7 +33,7 @@ lucid.selectWallet.fromSeed(alice.seedPhrase);
 const simpleMintingPolicy = scriptFromNative({
     type: "all",
     scripts: [
-        { type: "sig", keyHash: paymentCredentialOf(await lucid.wallet().address()).hash },
+        // { type: "sig", keyHash: paymentCredentialOf(await lucid.wallet().address()).hash },
     ],
 });
 const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
@@ -102,8 +102,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // to start we will assert only that the transaction must mint the same
     // values as the dummy transaction
     // add a very simple policy to mint a token
-  
-
 
     console.log(`%cAbout to create dummy transaction`, "color: yellow")
 
@@ -114,19 +112,44 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         })
         .attach.MintingPolicy(simpleMintingPolicy)
         .complete();
+    console.log("%chave dummy transaction", "color: yellow")
     const dummyTxObj : any = dummyTx.toJSON()
 
     console.log("%cdummyTxObj.body.mint", "color: orange",dummyTxObj.body.mint)
 
     // const customTransactionIdBuilder = new CustomTransactionIdBuilder()
     //     // .withInputs(dummyTxObj.body.inputs)
-    //     .withReferenceInputs(dummyTxObj.body.reference_inputs)
+    //     // .withReferenceInputs(dummyTxObj.body.reference_inputs)
     //     // .withOutputs(txObj.body.outputs)
     //     // .withFee(txObj.body.fee)
+    //     .withMint(dummyTxObj.body.mint)
     
     // const message = await customTransactionIdBuilder.build()
+    // const message = await sha256(new Uint8Array([1]))
+    console.log("keys".repeat(10))
+    console.log(Object.keys(dummyTxObj.body.mint))
+    console.log(dummyTxObj.body.mint)
+
+   
+    const ValueSchema = Data.Map(
+        Data.Bytes(),
+        Data.Map(Data.Bytes(), Data.Bytes())
+    );
+    type Value = Data.Static<typeof ValueSchema>;
+    const value = ValueSchema as unknown as Value;
+
+    const value2 = dummyTxObj.body.mint as unknown as Value
+    console.log("%cvalue2", "color: orange", value2)
+
+
+    // const preimage = new Uint8Array([1])
+    const preimage = Data.to<Value>(value2)
+    console.log("%cpreimage", "color: orange", preimage)
+    console.log("----------------------------------------------------------------")
+    // const message = await sha256(preimage)
     const message = await sha256(new Uint8Array([1]))
-    console.log(`Message: ${toHex(message)}`)
+    console.log("%cmessage", "color: hotpink", message)
+    console.log(`%cmessage ${toHex(message)}`, "color: hotpink")
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
@@ -137,6 +160,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .attach.MintingPolicy(simpleMintingPolicy)
         .complete()
 
+    console.log("%chave real transaction", "color: yellow")
     const txObj : any = tx.toJSON()
     assert(txObj.body.mint === dummyTxObj.body.mint, "mint must be the same on dummy and real transactions")
 

@@ -85,13 +85,24 @@ export class CustomTransactionIdBuilder {
     }
 
     withMint(mint: any) {
-        // this.mint = fromHex(Data.to(new Constr(0, [mint])))
-        const mintData = Data.fromJson(mint)
-        console.log("%cSTUB:withMint: mintData", "color: orange", mintData)
-        // this.mint = fromHex(Data.fromJson(mint))
-        console.log("%cSTUB:withMint: mint", "color: orange", mint)
-        this.mint = new Uint8Array()
-        console.log("%cSTUB:withMint: this.mint", "color: orange", this.mint)
+        console.log("%cSTUB:withMint: mint is", "color: orange", mint)
+        // this.mint = fromHex(Data.to(Data.fromJson(mint)))
+        // how do you serialize a "Value" aiken type? 
+        // console.log("%cFROM JSON", "color: orange", Data.fromJson(mint))
+        const firstLayerKeys : string[] = Object.keys(mint)
+        const secondLayerKeys : string[][] = firstLayerKeys.map(key => Object.keys(mint[key]))
+
+        const keys = firstLayerKeys.map((key, index) => ({policy: key, assetNames: secondLayerKeys[index]}))
+
+        const constr = new Constr(0, keys.map(key => new Constr(0, [
+            // key.policy,
+            // new Constr(0, key.assetNames.map(assetName => new Constr(0, [assetName, 1n])))
+        ])))
+        const mintHex = Data.to(constr)
+        console.log("%cSTUB:withMint: constr is", "color: orange", constr)
+        console.log(`%cMint hex: ${mintHex}`, "color: green")
+        this.mint = fromHex(mintHex)
+        console.log("%cSTUB:withMint: this.mint is", "color: orange", this.mint)
         return this
     }
 
