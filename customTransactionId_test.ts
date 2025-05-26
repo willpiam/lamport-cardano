@@ -117,33 +117,12 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
     console.log("%cdummyTxObj.body.mint", "color: orange",dummyTxObj.body.mint)
 
-    // const customTransactionIdBuilder = new CustomTransactionIdBuilder()
-    //     // .withInputs(dummyTxObj.body.inputs)
-    //     // .withReferenceInputs(dummyTxObj.body.reference_inputs)
-    //     // .withOutputs(txObj.body.outputs)
-    //     // .withFee(txObj.body.fee)
-    //     .withMint(dummyTxObj.body.mint)
-    
-    // const message = await customTransactionIdBuilder.build()
-    // const message = await sha256(new Uint8Array([1]))
+   
     console.log("keys".repeat(10))
     console.log(Object.keys(dummyTxObj.body.mint))
     console.log(dummyTxObj.body.mint)
 
-   
-    const ValueSchema = Data.Map(
-        Data.Bytes(),
-        Data.Map(Data.Bytes(), Data.Bytes())
-    );
-    type Value = Data.Static<typeof ValueSchema>;
-    const value = ValueSchema as unknown as Value;
-
-    const value2 = dummyTxObj.body.mint as unknown as Value
-    console.log("%cvalue2", "color: orange", value2)
-
-
-    // const preimage = new Uint8Array([1])
-    const preimage = Data.to<Value>(value2)
+    const preimage = new Uint8Array([1])
     console.log("%cpreimage", "color: orange", preimage)
     console.log("----------------------------------------------------------------")
     // const message = await sha256(preimage)
