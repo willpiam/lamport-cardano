@@ -32,12 +32,12 @@ const lucid = await Lucid(emulator, "Custom");
 lucid.selectWallet.fromSeed(alice.seedPhrase);
 
 
-export const ValueSchema = Data.Map(
-  Data.Bytes(),
-  Data.Map(Data.Bytes(), Data.Bytes())
-);
-export type Value = Data.Static<typeof ValueSchema>;
-export const Value = ValueSchema as unknown as Value;
+// export const ValueSchema = Data.Map(
+//   Data.Bytes(),
+//   Data.Map(Data.Bytes(), Data.Bytes())
+// );
+// export type Value = Data.Static<typeof ValueSchema>;
+// export const Value = ValueSchema as unknown as Value;
 
 const simpleMintingPolicy = scriptFromNative({
     type: "all",
@@ -113,6 +113,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // add a very simple policy to mint a token
 
     console.log(`%cAbout to create dummy transaction`, "color: yellow")
+    // const mintObj = {
+    //         [simplePolicyId + fromText("MyToken")]: 1n,
+    //     }
 
     const dummyTx = await lucid
         .newTx()
@@ -133,9 +136,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // const mintObj = dummyTx.toTransaction().body().mint()
     const mintObj = Object.keys(dummyTxObj.body.mint)
         .reduce((acc, key) => {
-            acc.set(key, new Map(Object.entries(dummyTxObj.body.mint[key])))
+            acc.set(key, new Map(Object.entries(dummyTxObj.body.mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
             return acc
-        }, new Map<string, Map<string, string>>())
+        }, new Map<string, Map<string, bigint>>())
     console.log("%cmintObj", "color: orange", mintObj)
     // console.log("%cmintObj", "color: orange", mintObj)
 
@@ -145,9 +148,16 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // const preimage = Data.from(Data.to(dummyTxObj.body.mint, Value), Value)
     assertExists(mintObj, "mintObj must not be undefined")
 
-    const ValueSchema2 = Data.Map(Data.Bytes(), Data.Map(Data.Bytes(), Data.Bytes()))
-    type Value2 = Data.Static<typeof ValueSchema2>;
-    const Value2 = ValueSchema2 as unknown as Value2;
+    const ValueSchema = Data.Map(
+        Data.Bytes(), 
+        Data.Map(
+            Data.Bytes(), 
+            Data.Integer()
+            // Data.Bytes()
+        )
+    )
+    type Value = Data.Static<typeof ValueSchema>;
+    const Value = ValueSchema as unknown as Value;
 
     console.log("%cSTUB (made Value2 type)", "color: purple")
 
@@ -155,13 +165,13 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // const a = Data.to(mintObj, Value)
     // const a = Data.to(mintObj, Value2)
     // const a = Data.to<Value2>(mintObj, Value2)
-    const a = Data.to<Value2>(mintObj)
+    const a = Data.to(mintObj, Value)
     console.log("%cGot A!", "color: orange", a)
 
 
 
 
-    const preimage = Data.from(a, Value2)
+    const preimage = Data.from(a, Value)
     // const preimage = Data.from(Data.to(mintObj, Value), Value)
 
     console.log("%cpreimage", "color: orange", preimage)
