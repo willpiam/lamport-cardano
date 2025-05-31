@@ -112,11 +112,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // values as the dummy transaction
     // add a very simple policy to mint a token
 
-    console.log(`%cAbout to create dummy transaction`, "color: yellow")
-    // const mintObj = {
-    //         [simplePolicyId + fromText("MyToken")]: 1n,
-    //     }
-
     const dummyTx = await lucid
         .newTx()
         .mintAssets({
@@ -124,65 +119,45 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         })
         .attach.MintingPolicy(simpleMintingPolicy)
         .complete();
-    console.log("%chave dummy transaction", "color: yellow")
     const dummyTxObj : any = dummyTx.toJSON()
 
     console.log("%cdummyTxObj.body.mint", "color: orange",dummyTxObj.body.mint)
 
-    console.log("%cSTUB about to get preimage", "color: purple")
-
-    /// Ways I have tried to build the `mintObj` ///////////
-    // const mintObj = dummyTxObj.body.mint
-    // const mintObj = dummyTx.toTransaction().body().mint()
     const mintObj = Object.keys(dummyTxObj.body.mint)
         .reduce((acc, key) => {
             acc.set(key, new Map(Object.entries(dummyTxObj.body.mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
             return acc
         }, new Map<string, Map<string, bigint>>())
     console.log("%cmintObj", "color: orange", mintObj)
-    // console.log("%cmintObj", "color: orange", mintObj)
-
-
-    console.log("%cSTUB", "color: purple")
-    // const preimage = Data.to<Value>(dummyTxObj.body.mint)
-    // const preimage = Data.from(Data.to(dummyTxObj.body.mint, Value), Value)
-    assertExists(mintObj, "mintObj must not be undefined")
+    // assert that the only key is the policy id
+    assert(mintObj.keys().toArray().includes(simplePolicyId), "mintOnj must include simple policy id")
+    // assert its the only key
+    assert(mintObj.size === 1, "mintObj must have only one key")
+    // assert that the value is a map with one entry
+    assert(mintObj.get(simplePolicyId)?.size === 1, "mintObj must have only one map with only one value")
+    // assert that the only key in the second layer map is the token name
+    assert(mintObj.get(simplePolicyId)?.keys().toArray().includes(fromText("MyToken")), "mintObj must have only one map with only one value")
+    console.log("STUB ".repeat(10))
 
     const ValueSchema = Data.Map(
         Data.Bytes(), 
         Data.Map(
             Data.Bytes(), 
             Data.Integer()
-            // Data.Bytes()
         )
     )
     type Value = Data.Static<typeof ValueSchema>;
     const Value = ValueSchema as unknown as Value;
 
-    console.log("%cSTUB (made Value2 type)", "color: purple")
-
-    /// Ways I have tried to build the `a` ///////////
-    // const a = Data.to(mintObj, Value)
-    // const a = Data.to(mintObj, Value2)
-    // const a = Data.to<Value2>(mintObj, Value2)
-    const a = Data.to(mintObj, Value)
-    console.log("%cGot A!", "color: orange", a)
-
-
-
-
-    const preimage = Data.from(a, Value)
-    // const preimage = Data.from(Data.to(mintObj, Value), Value)
-
+    const preimage = Data.to<Value>(mintObj, Value)
+    
     console.log("%cpreimage", "color: orange", preimage)
+    const message = await sha256(fromHex(preimage))
+    // const message = await sha256(preimage)
 
-    // const preimage = new Uint8Array([1])
-    // console.log("%cpreimage", "color: orange", preimage)
-    console.log("----------------------------------------------------------------")
-    // const message = await sha256(fromHex(preimage))
-    const message = await sha256(new Uint8Array([1]))
-    console.log("%cmessage", "color: hotpink", message)
     console.log(`%cmessage ${toHex(message)}`, "color: hotpink")
+    console.log("simplePolicyId", fromHex(simplePolicyId))
+    console.log("asset name", fromHex(fromText("MyToken")))
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
@@ -192,6 +167,8 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         })
         .attach.MintingPolicy(simpleMintingPolicy)
         .complete()
+    
+    console.log("%cpassed complete ", "color: hotpink")
 
     console.log("%chave real transaction", "color: yellow")
     const txObj : any = tx.toJSON()
@@ -203,7 +180,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     
     const utxos = await lucid.utxosAt(scriptAddress)
     assert(utxos.length === 0, "expected 0 utxos in the validator")
-
 });
 
 
