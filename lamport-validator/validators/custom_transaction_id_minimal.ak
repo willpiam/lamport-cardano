@@ -14,7 +14,10 @@ validator custom_transaction_id_minimal {
   ) {
     expect SpendAction.VerifyFullSignature(message) = action
     let mint_bytes = builtin.serialise_data(self.mint)
+    trace @"mint_bytes": mint_bytes
     let checksum = sha2_256(mint_bytes)
+    trace @"checksum": checksum
+    trace @"message": message
     // custom_transaction_id(self) == message
     // True
     checksum == message

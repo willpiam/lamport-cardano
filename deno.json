@@ -7,7 +7,7 @@
     "persistenceTest": "deno run --allow-read --allow-env --allow-ffi --allow-write lamportPersistenceExperiment.ts",
     "lamportExperiment": "deno run --allow-read --allow-env --allow-ffi --allow-write lamportExperiment.ts",
     "mk:accounts": "deno run --allow-read --allow-env --allow-ffi --allow-write createTestAccounts.ts",
-    "build" : "cd lamport-validator && aiken build",
+    "build" : "cd lamport-validator && aiken build --trace-level verbose",
     "aiken:test" : "cd lamport-validator && aiken check"
   },
   "imports": {
