@@ -5,6 +5,7 @@ import {
   Constr,
   Data,
   Emulator,
+  fromHex,
   fromText,
   generateEmulatorAccount,
   getAddressDetails,
@@ -29,6 +30,14 @@ const alice = generateEmulatorAccount({
 const emulator = new Emulator([alice]);
 const lucid = await Lucid(emulator, "Custom");
 lucid.selectWallet.fromSeed(alice.seedPhrase);
+
+
+export const ValueSchema = Data.Map(
+  Data.Bytes(),
+  Data.Map(Data.Bytes(), Data.Bytes())
+);
+export type Value = Data.Static<typeof ValueSchema>;
+export const Value = ValueSchema as unknown as Value;
 
 const simpleMintingPolicy = scriptFromNative({
     type: "all",
@@ -117,17 +126,50 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
     console.log("%cdummyTxObj.body.mint", "color: orange",dummyTxObj.body.mint)
 
-   
-    console.log("keys".repeat(10))
-    console.log(Object.keys(dummyTxObj.body.mint))
-    console.log(dummyTxObj.body.mint)
+    console.log("%cSTUB about to get preimage", "color: purple")
 
-    const preimage = Data.to(Data.fromJson(dummyTxObj.body.mint))
+    /// Ways I have tried to build the `mintObj` ///////////
+    // const mintObj = dummyTxObj.body.mint
+    // const mintObj = dummyTx.toTransaction().body().mint()
+    const mintObj = Object.keys(dummyTxObj.body.mint)
+        .reduce((acc, key) => {
+            acc.set(key, new Map(Object.entries(dummyTxObj.body.mint[key])))
+            return acc
+        }, new Map<string, Map<string, string>>())
+    console.log("%cmintObj", "color: orange", mintObj)
+    // console.log("%cmintObj", "color: orange", mintObj)
+
+
+    console.log("%cSTUB", "color: purple")
+    // const preimage = Data.to<Value>(dummyTxObj.body.mint)
+    // const preimage = Data.from(Data.to(dummyTxObj.body.mint, Value), Value)
+    assertExists(mintObj, "mintObj must not be undefined")
+
+    const ValueSchema2 = Data.Map(Data.Bytes(), Data.Map(Data.Bytes(), Data.Bytes()))
+    type Value2 = Data.Static<typeof ValueSchema2>;
+    const Value2 = ValueSchema2 as unknown as Value2;
+
+    console.log("%cSTUB (made Value2 type)", "color: purple")
+
+    /// Ways I have tried to build the `a` ///////////
+    // const a = Data.to(mintObj, Value)
+    // const a = Data.to(mintObj, Value2)
+    // const a = Data.to<Value2>(mintObj, Value2)
+    const a = Data.to<Value2>(mintObj)
+    console.log("%cGot A!", "color: orange", a)
+
+
+
+
+    const preimage = Data.from(a, Value2)
+    // const preimage = Data.from(Data.to(mintObj, Value), Value)
+
+    console.log("%cpreimage", "color: orange", preimage)
 
     // const preimage = new Uint8Array([1])
-    console.log("%cpreimage", "color: orange", preimage)
+    // console.log("%cpreimage", "color: orange", preimage)
     console.log("----------------------------------------------------------------")
-    // const message = await sha256(preimage)
+    // const message = await sha256(fromHex(preimage))
     const message = await sha256(new Uint8Array([1]))
     console.log("%cmessage", "color: hotpink", message)
     console.log(`%cmessage ${toHex(message)}`, "color: hotpink")
