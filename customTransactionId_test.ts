@@ -121,8 +121,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .complete();
     const dummyTxObj : any = dummyTx.toJSON()
 
-    console.log("%cdummyTxObj.body.mint", "color: orange",dummyTxObj.body.mint)
-
     const mintObj = Object.keys(dummyTxObj.body.mint)
         .reduce((acc, key) => {
             acc.set(key, new Map(Object.entries(dummyTxObj.body.mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
@@ -137,7 +135,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     assert(mintObj.get(simplePolicyId)?.size === 1, "mintObj must have only one map with only one value")
     // assert that the only key in the second layer map is the token name
     assert(mintObj.get(simplePolicyId)?.keys().toArray().includes(fromText("MyToken")), "mintObj must have only one map with only one value")
-    console.log("STUB ".repeat(10))
 
     const ValueSchema = Data.Map(
         Data.Bytes(), 
@@ -156,8 +153,8 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // const message = await sha256(preimage)
 
     console.log(`%cmessage ${toHex(message)}`, "color: hotpink")
-    console.log("simplePolicyId", fromHex(simplePolicyId))
-    console.log("asset name", fromHex(fromText("MyToken")))
+    // console.log("simplePolicyId", fromHex(simplePolicyId))
+    // console.log("asset name", fromHex(fromText("MyToken")))
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
