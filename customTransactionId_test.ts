@@ -146,7 +146,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     type Value = Data.Static<typeof ValueSchema>;
     const Value = ValueSchema as unknown as Value;
 
-    const preimage = Data.to<Value>(mintObj, Value)
+    const preimage = Data.to<Value>(mintObj, Value, {canonical: true})
     // const preimage = Data.to(new Constr(0, [mintObj]))
     
     console.log("%cpreimage", "color: orange", preimage)
