@@ -22,6 +22,7 @@ import { assert } from "node:console";
 import { SpendAction } from "./mirror-types.ts";
 import { sha256 } from "./sha256.ts";
 import { toHex } from "npm:@blaze-cardano/core";
+import { Value } from "./datatypes/index.ts";
 
 const alice = generateEmulatorAccount({
   lovelace: 100_000_000n, // 100 ada
@@ -31,19 +32,9 @@ const emulator = new Emulator([alice]);
 const lucid = await Lucid(emulator, "Custom");
 lucid.selectWallet.fromSeed(alice.seedPhrase);
 
-
-// export const ValueSchema = Data.Map(
-//   Data.Bytes(),
-//   Data.Map(Data.Bytes(), Data.Bytes())
-// );
-// export type Value = Data.Static<typeof ValueSchema>;
-// export const Value = ValueSchema as unknown as Value;
-
 const simpleMintingPolicy = scriptFromNative({
     type: "all",
-    scripts: [
-        // { type: "sig", keyHash: paymentCredentialOf(await lucid.wallet().address()).hash },
-    ],
+    scripts: [],
 });
 const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 
@@ -136,15 +127,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // assert that the only key in the second layer map is the token name
     assert(mintObj.get(simplePolicyId)?.keys().toArray().includes(fromText("MyToken")), "mintObj must have only one map with only one value")
 
-    const ValueSchema = Data.Map(
-        Data.Bytes(), 
-        Data.Map(
-            Data.Bytes(), 
-            Data.Integer()
-        )
-    )
-    type Value = Data.Static<typeof ValueSchema>;
-    const Value = ValueSchema as unknown as Value;
+    
 
     const preimage = Data.to<Value>(mintObj, Value, {canonical: true})
     // const preimage = Data.to(new Constr(0, [mintObj]))
