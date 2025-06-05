@@ -250,19 +250,19 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
   // sha2_256(#[1])
-  tx.mint
-    |> builtin.serialise_data
-    |> sha2_256
+  // tx.mint
+  //   |> builtin.serialise_data
+  //   |> sha2_256
   
 
 
 
-  // let builder = new_custom_transaction_id()
+  let builder = new_custom_transaction_id()
   //                 // |> with_inputs(tx.inputs)
   //                 // |> with_reference_inputs(tx.reference_inputs)
   //                 // |> with_outputs(tx.outputs)
   //                 // |> with_fee(tx.fee)
-  //                 |> with_mint(tx.mint)
+                  |> with_mint(tx.mint)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
   //                 // |> with_extra_signatories(tx.extra_signatories)
@@ -273,7 +273,7 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
   //                 // |> with_current_treasury_amount(tx.current_treasury_amount)
   //                 // |> with_treasury_donation(tx.treasury_donation)
 
-  // build_custom_transaction_id(builder)
+  build_custom_transaction_id(builder)
 }
 
 
