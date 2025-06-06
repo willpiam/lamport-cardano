@@ -90,12 +90,11 @@ export class CustomTransactionIdBuilder {
     }
 
     withMint(mint: any) {
-
-    const mintObj = Object.keys(mint)
-        .reduce((acc, key) => {
-            acc.set(key, new Map(Object.entries(mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
-            return acc
-        }, new Map<string, Map<string, bigint>>())
+        const mintObj = Object.keys(mint)
+            .reduce((acc, key) => {
+                acc.set(key, new Map(Object.entries(mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
+                return acc
+            }, new Map<string, Map<string, bigint>>())
         const preimage = Data.to<Value>(mintObj, Value, {canonical: true})
         this.mint = fromHex(preimage)
         return this
