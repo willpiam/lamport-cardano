@@ -6,7 +6,7 @@
 
 */
 
-import { fromHex } from "npm:@blaze-cardano/core";
+import { fromHex, toHex } from "npm:@blaze-cardano/core";
 import { sha256 } from "./sha256.ts";
 import {
   assertEquals,
@@ -15,8 +15,12 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, TxSignBuilder } from "npm:@lucid-evolution/lucid";
-import { Value } from "./datatypes/index.ts";
+import { Value, ValidityRange } from "./datatypes/index.ts";
 
+const show = (x: any) => {
+    console.log(`%c${x}`, "color: hotpink");
+    return x;
+}
 
 export type CustomTransactionId = Uint8Array
 
@@ -41,17 +45,42 @@ export class CustomTransactionIdBuilder {
 
     public static async customTransactionId(tx: TxSignBuilder) {
         const txObj = tx.toJSON() as any
+        // console.log(txObj)
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
             .build()
     }
 
+    /*
+        for now we will assume that the both bounds are specified
+    */
     withValidityRange(validity_interval_start: number, ttl: number) {
-
-
-        // const validity_range = Data.to(new Constr(0, [BigInt(validity_interval_start), BigInt(ttl)]))
-        this.validity_range = fromHex(validity_range)
+        console.log(`%cvalidity_interval_start: ${validity_interval_start}`, "color: green")
+        console.log(`%cttl: ${ttl}`, "color: green")
+        const range = Data.to<ValidityRange>( {
+            lower_bound: {
+                bound_type: {
+                    Finite: {
+                        value: BigInt(validity_interval_start)
+                    }
+                },
+                is_inclusive: true,
+            },
+            upper_bound: {
+                bound_type: {
+                    Finite: {
+                        value: BigInt(ttl)
+                    }
+                },
+                is_inclusive: true,
+            }
+        }, ValidityRange, 
+        // {canonical: true}
+    )
+        this.validity_range = fromHex(range)
+        console.log(`%crange: ${range}`, "color: green")
+        console.log(`%cvalidity_range: ${this.validity_range}`, "color: green")
         return this
     }
 
@@ -120,6 +149,7 @@ export class CustomTransactionIdBuilder {
             this.mint,
         //     // this.certificates,
         //     // this.withdrawals,
+            this.validity_range,
         //     // this.extra_signatories,
         //     // this.redeemers,
         //     // this.datums,
@@ -136,7 +166,12 @@ export class CustomTransactionIdBuilder {
         // assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
         // const blob = this.reference_inputs
         assertExists(this.mint, "Mint must be defined in the build step")
-        const blob = this.mint
+        assertExists(this.validity_range, "Validity range must be defined")
+        // const blob = this.mint.concat(this.validity_range)
+        const blob = new Uint8Array(this.mint.length + this.validity_range.length)
+        blob.set(this.mint, 0)
+        blob.set(this.validity_range, this.mint.length)
+        console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
         return await sha256(blob)
     }
 }

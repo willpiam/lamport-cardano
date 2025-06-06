@@ -14,7 +14,7 @@ export const Value = ValueSchema as unknown as Value;
 // aiken: Interval<a> = Interval { lower_bound: IntervalBound<a>, upper_bound: IntervalBound<a> }
 // aiken: IntervalBound<a> = IntervalBound { bound_type: IntervalBoundType<a>, is_inclusive: Bool }
 // aiken: IntervalBoundType<a> = One of NegativeInfinity, Finite(a), PositiveInfinity
-const IntervalBoundTypeSchema = Data.Enum([
+export const IntervalBoundTypeSchema = Data.Enum([
   Data.Object({ NegativeInfinity: Data.Literal("NegativeInfinity") }),
   Data.Object({ Finite: Data.Object({ value: Data.Integer() }) }),
   Data.Object({ PositiveInfinity: Data.Literal("PositiveInfinity") }),

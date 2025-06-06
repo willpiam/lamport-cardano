@@ -37,6 +37,8 @@ const simpleMintingPolicy = scriptFromNative({
 const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 
 Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
+    const validFrom = emulator.now();
+    const validTo = validFrom + 900000;
     const tx = await lucid.newTx()
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,
@@ -45,6 +47,8 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
         .pay.ToAddress(await lucid.wallet().address(), {
             lovelace: 1_000_000n,
         })
+        .validFrom(validFrom)
+        .validTo(validTo)
         .complete()
 
     const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx)
@@ -129,3 +133,8 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     const utxos = await lucid.utxosAt(scriptAddress)
     assert(utxos.length === 0, "expected 0 utxos in the validator")
 });
+
+
+// off chain then on chain versions of blob
+/// a1581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfa1474d79546f6b656e01d8799fd8799fd87a9f1 4ffd87a80ffd8799fd87a9f190398                             ffd87 a 80ffff
+/// A1581CD441227553A0F1A965FEE7D60A0F724B368DD1BDDBC208730FCCEBCFA1474D79546F6B656E01D8799FD8799FD87A9F1 B0000019746ED03DDFFD87A80FFD8799FD87A9F1B0000019746FABF7D FFD87 9 80FFFF

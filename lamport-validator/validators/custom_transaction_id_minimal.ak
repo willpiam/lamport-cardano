@@ -13,7 +13,7 @@ validator custom_transaction_id_minimal {
     self: Transaction,
   ) {
     expect SpendAction.VerifyFullSignature(message) = action
-    trace @"message": message
+    // trace @"message": message
     custom_transaction_id(self) == message
   }
 }
