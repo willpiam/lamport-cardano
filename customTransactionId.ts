@@ -28,6 +28,7 @@ export class CustomTransactionIdBuilder {
     private mint: Uint8Array | undefined
     private certificates: Uint8Array | undefined
     private withdrawals: Uint8Array | undefined
+    private validity_range: Uint8Array | undefined
     private extra_signatories: Uint8Array | undefined
     private redeemers: Uint8Array | undefined
     private datums: Uint8Array | undefined
@@ -42,7 +43,16 @@ export class CustomTransactionIdBuilder {
         const txObj = tx.toJSON() as any
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
+            .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
             .build()
+    }
+
+    withValidityRange(validity_interval_start: number, ttl: number) {
+
+
+        // const validity_range = Data.to(new Constr(0, [BigInt(validity_interval_start), BigInt(ttl)]))
+        this.validity_range = fromHex(validity_range)
+        return this
     }
 
     /*

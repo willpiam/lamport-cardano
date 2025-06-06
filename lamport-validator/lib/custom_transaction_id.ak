@@ -137,6 +137,7 @@ fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Creden
 }
 
 fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: ValidityRange) -> CustomTransactionIdBuilder {
+  trace @"inside with_validity_range": validity_range
   let validity_range_bytes = builtin.serialise_data(validity_range)
 
   CustomTransactionIdBuilder {
@@ -223,13 +224,14 @@ fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: O
 }
 
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
-  // let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
-  //   expect Some(element) = b
-  //   bytearray.concat(a, element)
-  // }
+  let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
+    expect Some(element) = b
+    bytearray.concat(a, element)
+  }
 
   expect Some(mint) = builder.mint
   let blob = mint
+    |> attach(builder.validity_range)
   // let blob = reference_inputs 
   //   // |> attach(builder.reference_inputs)
   //   // |> attach(builder.outputs)
@@ -244,19 +246,21 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   // |> attach(builder.proposal_procedures)
   //   // |> attach(builder.current_treasury_amount)
   //   // |> attach(builder.treasury_donation)
-
+  trace @"blob": blob
   sha2_256(blob)
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
+  trace @"inside custom_transaction_id"
   let builder = new_custom_transaction_id()
   //                 // |> with_inputs(tx.inputs)
   //                 // |> with_reference_inputs(tx.reference_inputs)
   //                 // |> with_outputs(tx.outputs)
   //                 // |> with_fee(tx.fee)
-                  |> with_mint(tx.mint)
+            |> with_mint(tx.mint)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
+            |> with_validity_range(tx.validity_range)
   //                 // |> with_extra_signatories(tx.extra_signatories)
   //                 // |> with_redeemers(tx.redeemers)
   //                 // |> with_datums(tx.datums)
