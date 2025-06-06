@@ -20,9 +20,7 @@ import {
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
 import { assert } from "node:console";
 import { SpendAction } from "./mirror-types.ts";
-import { sha256 } from "./sha256.ts";
 import { toHex } from "npm:@blaze-cardano/core";
-import { Value } from "./datatypes/index.ts";
 
 const alice = generateEmulatorAccount({
   lovelace: 100_000_000n, // 100 ada
@@ -49,16 +47,7 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
         })
         .complete()
 
-    const txObj : any = tx.toJSON()
-
-    const customTransactionIdBuilder = new CustomTransactionIdBuilder()
-        // .withInputs(txObj.body.inputs)
-        // .withReferenceInputs(txObj.body.reference_inputs)
-        .withMint(txObj.body.mint)
-        // .withOutputs(txObj.body.outputs)
-        // .withFee(txObj.body.fee)
-
-    const customTransactionId = await customTransactionIdBuilder.build()
+    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx)
     console.log(customTransactionId)
 });
 
@@ -96,13 +85,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         console.log("%clocked 5 ada in the validator", "color: yellow")
     })
 
-    // step 1: build the transaction
-    // this may involve placing a dummy 32 bytes value in the redeemer to
-    // ensure the fee is calculated correctly
-    // to start we will assert only that the transaction must mint the same
-    // values as the dummy transaction
-    // add a very simple policy to mint a token
-
     const dummyTx = await lucid
         .newTx()
         .mintAssets({
@@ -110,38 +92,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         })
         .attach.MintingPolicy(simpleMintingPolicy)
         .complete();
-    const dummyTxObj : any = dummyTx.toJSON()
 
-    const mintObj = Object.keys(dummyTxObj.body.mint)
-        .reduce((acc, key) => {
-            acc.set(key, new Map(Object.entries(dummyTxObj.body.mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
-            return acc
-        }, new Map<string, Map<string, bigint>>())
-    console.log("%cmintObj", "color: orange", mintObj)
-    // assert that the only key is the policy id
-    assert(mintObj.keys().toArray().includes(simplePolicyId), "mintOnj must include simple policy id")
-    // assert its the only key
-    assert(mintObj.size === 1, "mintObj must have only one key")
-    // assert that the value is a map with one entry
-    assert(mintObj.get(simplePolicyId)?.size === 1, "mintObj must have only one map with only one value")
-    // assert that the only key in the second layer map is the token name
-    assert(mintObj.get(simplePolicyId)?.keys().toArray().includes(fromText("MyToken")), "mintObj must have only one map with only one value")
-
-    
-
-    const preimage = Data.to<Value>(mintObj, Value, {canonical: true})
-    // const preimage = Data.to(new Constr(0, [mintObj]))
-    
-    console.log("%cpreimage", "color: orange", preimage)
-    const message = await sha256(fromHex(preimage))
+    const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
-    // const message = await sha256(preimage)
-    
-    const message2 = await CustomTransactionIdBuilder.customTransactionId(dummyTx)
-    console.log(`%cmessage2 ${toHex(message2)}`, "color: hotpink")
-
-    // console.log("simplePolicyId", fromHex(simplePolicyId))
-    // console.log("asset name", fromHex(fromText("MyToken")))
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
@@ -155,8 +108,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     console.log("%cpassed complete ", "color: hotpink")
 
     console.log("%chave real transaction", "color: yellow")
-    const txObj : any = tx.toJSON()
-    assert(txObj.body.mint.toString() === dummyTxObj.body.mint.toString(), "mint must be the same on dummy and real transactions")
+    assert((tx.toJSON() as any).body.mint.toString() === (dummyTx.toJSON() as any).body.mint.toString(), "mint must be the same on dummy and real transactions")
 
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()
@@ -165,5 +117,3 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     const utxos = await lucid.utxosAt(scriptAddress)
     assert(utxos.length === 0, "expected 0 utxos in the validator")
 });
-
-

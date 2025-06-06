@@ -73,14 +73,7 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
 }
 
 fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
-  // for each input drop input.output_reference.transaction_id
-  // let sanitized_inputs = inputs |> list.map(fn(input) -> ByteArray {
-  //   let Input {output_reference, output} = input
-  //   builtin.serialise_data(output)
-  // })
-
-  let inputs_bytes = builtin.serialise_data(list.length(inputs))
-
+  let inputs_bytes = builtin.serialise_data(inputs)
   CustomTransactionIdBuilder {
     ..self,
     inputs: Some(inputs_bytes),
@@ -224,8 +217,6 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   bytearray.concat(a, element)
   // }
 
-  // // expect Some(inputs) = builder.inputs
-  // expect Some(reference_inputs) = builder.reference_inputs
   expect Some(mint) = builder.mint
   let blob = mint
   // let blob = reference_inputs 
@@ -249,14 +240,6 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
-  // sha2_256(#[1])
-  // tx.mint
-  //   |> builtin.serialise_data
-  //   |> sha2_256
-  
-
-
-
   let builder = new_custom_transaction_id()
   //                 // |> with_inputs(tx.inputs)
   //                 // |> with_reference_inputs(tx.reference_inputs)
@@ -272,10 +255,8 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
   //                 // |> with_proposal_procedures(tx.proposal_procedures)
   //                 // |> with_current_treasury_amount(tx.current_treasury_amount)
   //                 // |> with_treasury_donation(tx.treasury_donation)
-
   build_custom_transaction_id(builder)
 }
-
 
 test basic_sanity_check() {
   let placeholder = transaction.placeholder

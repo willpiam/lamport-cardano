@@ -14,19 +14,7 @@ validator custom_transaction_id_minimal {
   ) {
     expect SpendAction.VerifyFullSignature(message) = action
     trace @"message": message
-    let mint_bytes = builtin.serialise_data(self.mint)
-    trace @"mint_bytes": mint_bytes
-    let checksum = sha2_256(mint_bytes)
-    trace @"checksum": checksum
-    let id = custom_transaction_id(self)
-    trace @"id": id
-
-    // custom_transaction_id(self) == message
-    // True
-    and {
-      checksum == message,
-      id == message
-    }
+    custom_transaction_id(self) == message
   }
 }
 
@@ -54,7 +42,3 @@ test custom_transaction_id_minimal_test() {
     my_tx
   )
 }
-
-// preimage (off-chain name) or mint_bytes (on-chain name)
-// on-chain  A1581CD441227553A0F1A965FEE7D60A0F724B368DD1BDDBC208730FCCEBCFA1474D79546F6B656E01
-// off-chain bf581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfbf474d79546f6b656e01ffff
