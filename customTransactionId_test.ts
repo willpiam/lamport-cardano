@@ -85,12 +85,17 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         console.log("%clocked 5 ada in the validator", "color: yellow")
     })
 
+    const validFrom = emulator.now();
+    const validTo = validFrom + 900000;
+
     const dummyTx = await lucid
         .newTx()
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,
         })
         .attach.MintingPolicy(simpleMintingPolicy)
+        .validFrom(validFrom)
+        .validTo(validTo)
         .complete();
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx)
@@ -103,12 +108,17 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
             [simplePolicyId + fromText("MyToken")]: 1n,
         })
         .attach.MintingPolicy(simpleMintingPolicy)
+        .validFrom(validFrom)
+        .validTo(validTo)
         .complete()
     
     console.log("%cpassed complete ", "color: hotpink")
 
     console.log("%chave real transaction", "color: yellow")
     assert((tx.toJSON() as any).body.mint.toString() === (dummyTx.toJSON() as any).body.mint.toString(), "mint must be the same on dummy and real transactions")
+
+    console.log(tx.toJSON())
+    // TODO: assert the dummy tx and real tx have the exact same validity range
 
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()
