@@ -117,8 +117,10 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     console.log("%chave real transaction", "color: yellow")
     assert((tx.toJSON() as any).body.mint.toString() === (dummyTx.toJSON() as any).body.mint.toString(), "mint must be the same on dummy and real transactions")
 
-    console.log(tx.toJSON())
+    // console.log(tx.toJSON())
     // TODO: assert the dummy tx and real tx have the exact same validity range
+    assert((tx.toJSON() as any).body.ttl === (dummyTx.toJSON() as any).body.ttl, "ttl must be the same on dummy and real transactions")
+    assert((tx.toJSON() as any).body.validity_interval_start === (dummyTx.toJSON() as any).body.validity_interval_start, "validity interval start must be the same on dummy and real transactions")
 
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()
