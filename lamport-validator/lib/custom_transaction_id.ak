@@ -1,4 +1,4 @@
-use cardano/transaction.{ScriptPurpose, Redeemer, Output, Transaction, Input}
+use cardano/transaction.{ValidityRange, ScriptPurpose, Redeemer, Output, Transaction, Input}
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash, DataHash}
 use cardano/assets.{Lovelace, Value}
@@ -42,6 +42,7 @@ type CustomTransactionIdBuilder {
   mint: Option<ByteArray>,
   certificates: Option<ByteArray>,
   withdrawals: Option<ByteArray>,
+  validity_range: Option<ByteArray>,
   extra_signatories: Option<ByteArray>,
   redeemers: Option<ByteArray>,
   datums: Option<ByteArray>,
@@ -62,6 +63,7 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
     mint: None,
     certificates: None,
     withdrawals: None,
+    validity_range: None,
     extra_signatories: None,
     redeemers: None,
     datums: None,
@@ -131,6 +133,15 @@ fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Creden
   CustomTransactionIdBuilder {
     ..self,
     withdrawals: Some(withdrawals_bytes)
+  }
+}
+
+fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: ValidityRange) -> CustomTransactionIdBuilder {
+  let validity_range_bytes = builtin.serialise_data(validity_range)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    validity_range: Some(validity_range_bytes)
   }
 }
 
@@ -234,9 +245,7 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   // |> attach(builder.current_treasury_amount)
   //   // |> attach(builder.treasury_donation)
 
-  // // expect Some(blob) = builder.fee
   sha2_256(blob)
-  // sha2_256(#[1])
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
