@@ -134,9 +134,12 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     
     console.log("%cpreimage", "color: orange", preimage)
     const message = await sha256(fromHex(preimage))
+    console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
     // const message = await sha256(preimage)
+    
+    const message2 = await CustomTransactionIdBuilder.customTransactionId(dummyTx)
+    console.log(`%cmessage2 ${toHex(message2)}`, "color: hotpink")
 
-    console.log(`%cmessage ${toHex(message)}`, "color: hotpink")
     // console.log("simplePolicyId", fromHex(simplePolicyId))
     // console.log("asset name", fromHex(fromText("MyToken")))
 
@@ -153,7 +156,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
     console.log("%chave real transaction", "color: yellow")
     const txObj : any = tx.toJSON()
-    assert(txObj.body.mint === dummyTxObj.body.mint, "mint must be the same on dummy and real transactions")
+    assert(txObj.body.mint.toString() === dummyTxObj.body.mint.toString(), "mint must be the same on dummy and real transactions")
 
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()

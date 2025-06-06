@@ -14,7 +14,8 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data } from "npm:@lucid-evolution/lucid";
+import { Constr, Data, TxSignBuilder } from "npm:@lucid-evolution/lucid";
+import { Value } from "./datatypes/index.ts";
 
 
 export type CustomTransactionId = Uint8Array
@@ -36,6 +37,13 @@ export class CustomTransactionIdBuilder {
     private treasury_donation: Uint8Array | undefined
 
     constructor() {}
+
+    public static async customTransactionId(tx: TxSignBuilder) {
+        const txObj = tx.toJSON() as any
+        return await new CustomTransactionIdBuilder()
+            .withMint(txObj.body.mint)
+            .build()
+    }
 
     /*
         withInputs
@@ -59,16 +67,13 @@ export class CustomTransactionIdBuilder {
     */
     withInputs(inputs: any[]) {
         // TODO: process inputs before adding them to the builder
-        // this.inputs = new Uint8Array()
-        console.log("STUB:withInputs: inputs.length", inputs.length)
-        // this.inputs = fromHex(Data.to(new Constr(0, [BigInt(inputs.length)])))
-        this.inputs = fromHex(Data.to(new Constr(0, [BigInt(5)])))
+        this.inputs = new Uint8Array()
         return this
     }
 
     withReferenceInputs(reference_inputs: any[]) {
         // TODO: process reference_inputs before adding them to the builder
-        this.reference_inputs = fromHex(Data.to(new Constr(0, [])))
+        this.reference_inputs = new Uint8Array()
         return this
     }
    
@@ -85,36 +90,25 @@ export class CustomTransactionIdBuilder {
     }
 
     withMint(mint: any) {
-        console.log("%cSTUB:withMint: mint is", "color: orange", mint)
-        // this.mint = fromHex(Data.to(Data.fromJson(mint)))
-        // how do you serialize a "Value" aiken type? 
-        // console.log("%cFROM JSON", "color: orange", Data.fromJson(mint))
-        const firstLayerKeys : string[] = Object.keys(mint)
-        const secondLayerKeys : string[][] = firstLayerKeys.map(key => Object.keys(mint[key]))
 
-        const keys = firstLayerKeys.map((key, index) => ({policy: key, assetNames: secondLayerKeys[index]}))
-
-        const constr = new Constr(0, keys.map(key => new Constr(0, [
-            // key.policy,
-            // new Constr(0, key.assetNames.map(assetName => new Constr(0, [assetName, 1n])))
-        ])))
-        const mintHex = Data.to(constr)
-        console.log("%cSTUB:withMint: constr is", "color: orange", constr)
-        console.log(`%cMint hex: ${mintHex}`, "color: green")
-        this.mint = fromHex(mintHex)
-        console.log("%cSTUB:withMint: this.mint is", "color: orange", this.mint)
+    const mintObj = Object.keys(mint)
+        .reduce((acc, key) => {
+            acc.set(key, new Map(Object.entries(mint[key]).map(([k, v] : [string, any]) => [k, BigInt(v)])))
+            return acc
+        }, new Map<string, Map<string, bigint>>())
+        const preimage = Data.to<Value>(mintObj, Value, {canonical: true})
+        this.mint = fromHex(preimage)
         return this
     }
 
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
-        // assertExists(this.fee, "Fee must be defined")
-        // assert([
+        assert([
         //     // this.inputs,
         //     // this.reference_inputs,
         //     // this.outputs,
         //     // this.fee,
-        //     // this.mint,
+            this.mint,
         //     // this.certificates,
         //     // this.withdrawals,
         //     // this.extra_signatories,
@@ -124,7 +118,7 @@ export class CustomTransactionIdBuilder {
         //     // this.proposal_procedures,
         //     // this.current_treasury_amount,
         //     // this.treasury_donation,
-        // ].every(element => element !== undefined), "All fields must be defined")
+        ].every(element => element !== undefined), "All fields must be defined")
 
         // const serialized = new Uint8Array()
         // const serialized = this.fee
