@@ -1,14 +1,14 @@
 use aiken/collection/dict
 use aiken/collection/list
-use cardano/assets.{PolicyId, AssetName}
+use cardano/assets.{PolicyId}
 use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction, Input}
 use cardano/address.{Script}
 use aiken/primitive/bytearray
 use aiken/primitive/int
 use aiken/crypto.{sha2_256}
 use verify_lamport.{LamportPublicKey, verify_lamport}
-use merkle.{ProofNode, verify_merkle_proof}
-use helpers.{SpendAction, MintAction, PublicKeyChunk, State, 
+use merkle.{verify_merkle_proof}
+use helpers.{SpendAction, MintAction, State, 
 compare_signed_message_chunk, find_output_with_asset, hash_chunk, check_remaining_uninitialized}
 
 /// Verify a full lamport signature by breaking it into multiple pieces

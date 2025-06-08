@@ -54,6 +54,7 @@ export class CustomTransactionIdBuilder {
 
     /*
         for now we will assume that the both bounds are specified
+        -- what if its not incorrectly formatted? its just the wrong data? 
     */
     withValidityRange(validity_interval_start: number, ttl: number) {
         console.log(`%cvalidity_interval_start: ${validity_interval_start}`, "color: green")
@@ -77,7 +78,8 @@ export class CustomTransactionIdBuilder {
             }
         }, ValidityRange, 
         // {canonical: true}
-    )
+        )
+        console.log(`%cValidity range bytes: ${range}`, "color: cyan")
         this.validity_range = fromHex(range)
         console.log(`%crange: ${range}`, "color: green")
         console.log(`%cvalidity_range: ${this.validity_range}`, "color: green")
@@ -141,33 +143,9 @@ export class CustomTransactionIdBuilder {
 
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
-        assert([
-        //     // this.inputs,
-        //     // this.reference_inputs,
-        //     // this.outputs,
-        //     // this.fee,
-            this.mint,
-        //     // this.certificates,
-        //     // this.withdrawals,
-            this.validity_range,
-        //     // this.extra_signatories,
-        //     // this.redeemers,
-        //     // this.datums,
-        //     // this.votes,
-        //     // this.proposal_procedures,
-        //     // this.current_treasury_amount,
-        //     // this.treasury_donation,
-        ].every(element => element !== undefined), "All fields must be defined")
-
-        // const serialized = new Uint8Array()
-        // const serialized = this.fee
-        // assertExists(this.inputs, "Inputs must be defined")
-        // const blob = this.inputs
-        // assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
-        // const blob = this.reference_inputs
         assertExists(this.mint, "Mint must be defined in the build step")
         assertExists(this.validity_range, "Validity range must be defined")
-        // const blob = this.mint.concat(this.validity_range)
+
         const blob = new Uint8Array(this.mint.length + this.validity_range.length)
         blob.set(this.mint, 0)
         blob.set(this.validity_range, this.mint.length)

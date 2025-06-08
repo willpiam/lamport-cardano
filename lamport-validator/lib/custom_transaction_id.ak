@@ -1,14 +1,12 @@
-use cardano/transaction.{ValidityRange, ScriptPurpose, Redeemer, Output, Transaction, Input}
+use cardano/transaction.{ValidityRange, Transaction }
 use aiken/builtin
-use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash, DataHash}
-use cardano/assets.{Lovelace, Value}
-use cardano/certificate.{Certificate}
-use cardano/address.{Credential}
-use aiken/collection/dict.{Dict}
-use aiken/collection/list
+use aiken/crypto.{Hash, Sha2_256, sha2_256}
+use cardano/assets.{Value}
+// use cardano/address.{Credential}
+// use aiken/collection/dict.{Dict}
+// use aiken/collection/list
 use aiken/primitive/bytearray
-use cardano/governance.{Voter, GovernanceActionId, Vote, ProposalProcedure}
-use helpers.{SpendAction}
+// use helpers.{SpendAction}
 
 
 // TODO: come up with a better name than Custom Transaction Id
@@ -74,40 +72,40 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
   }
 }
 
-fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
-  let inputs_bytes = builtin.serialise_data(inputs)
-  CustomTransactionIdBuilder {
-    ..self,
-    inputs: Some(inputs_bytes),
-  }
-}
+// fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
+//   let inputs_bytes = builtin.serialise_data(inputs)
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     inputs: Some(inputs_bytes),
+//   }
+// }
 
-fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
-  let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
+// fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
+//   let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    reference_inputs: Some(reference_inputs_bytes),
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     reference_inputs: Some(reference_inputs_bytes),
+//   }
+// }
 
-fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
-  let outputs_bytes = builtin.serialise_data(outputs)
+// fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
+//   let outputs_bytes = builtin.serialise_data(outputs)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    outputs: Some(outputs_bytes),
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     outputs: Some(outputs_bytes),
+//   }
+// }
 
-fn with_fee(self: CustomTransactionIdBuilder, fee: Lovelace) -> CustomTransactionIdBuilder {
-  let fee_bytes = builtin.serialise_data(fee)
+// fn with_fee(self: CustomTransactionIdBuilder, fee: Lovelace) -> CustomTransactionIdBuilder {
+//   let fee_bytes = builtin.serialise_data(fee)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    fee: Some(fee_bytes),
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     fee: Some(fee_bytes),
+//   }
+// }
 
 fn with_mint(self: CustomTransactionIdBuilder, mint: Value) -> CustomTransactionIdBuilder {
   let mint_bytes = builtin.serialise_data(mint)
@@ -118,27 +116,28 @@ fn with_mint(self: CustomTransactionIdBuilder, mint: Value) -> CustomTransaction
   }
 }
 
-fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certificate>) -> CustomTransactionIdBuilder {
-  let certificates_bytes = builtin.serialise_data(certificates)
+// fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certificate>) -> CustomTransactionIdBuilder {
+//   let certificates_bytes = builtin.serialise_data(certificates)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    certificates: Some(certificates_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     certificates: Some(certificates_bytes)
+//   }
+// }
 
-fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
-  let withdrawals_bytes = builtin.serialise_data(withdrawals)
+// fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
+//   let withdrawals_bytes = builtin.serialise_data(withdrawals)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    withdrawals: Some(withdrawals_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     withdrawals: Some(withdrawals_bytes)
+//   }
+// }
 
 fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: ValidityRange) -> CustomTransactionIdBuilder {
   trace @"inside with_validity_range": validity_range
   let validity_range_bytes = builtin.serialise_data(validity_range)
+  trace @"validity_range_bytes is ": validity_range_bytes
 
   CustomTransactionIdBuilder {
     ..self,
@@ -146,82 +145,82 @@ fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: Validit
   }
 }
 
-fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: List<VerificationKeyHash>) -> CustomTransactionIdBuilder {
-  let extra_signatories_bytes = builtin.serialise_data(extra_signatories)
+// fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: List<VerificationKeyHash>) -> CustomTransactionIdBuilder {
+//   let extra_signatories_bytes = builtin.serialise_data(extra_signatories)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    extra_signatories: Some(extra_signatories_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     extra_signatories: Some(extra_signatories_bytes)
+//   }
+// }
 
-fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
-  // find redeemers created with the VerifySignatureChunk and drop the signature chunk
-  let sanitized_redeemers = redeemers 
-    |> list.reduce(#[], fn (acc, redeemer_pair) -> ByteArray {
-      // expect Pair(purpose, redeemer) = redeemer_pair
-      let Pair(purpose, redeemer) = redeemer_pair
-      let redeemer_bytes = if redeemer is SpendAction {
-        when redeemer is {
-          SpendAction.VerifySignatureChunk(_) | SpendAction.VerifyFullSignature(_) -> builtin.serialise_data(Pair(purpose, #[0]))
-          _ -> builtin.serialise_data(redeemer_pair)
-        }
-      } else {
-        builtin.serialise_data(redeemer_pair)
-      }
-      bytearray.concat(acc, redeemer_bytes)
-    })
+// fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
+//   // find redeemers created with the VerifySignatureChunk and drop the signature chunk
+//   let sanitized_redeemers = redeemers 
+//     |> list.reduce(#[], fn (acc, redeemer_pair) -> ByteArray {
+//       // expect Pair(purpose, redeemer) = redeemer_pair
+//       let Pair(purpose, redeemer) = redeemer_pair
+//       let redeemer_bytes = if redeemer is SpendAction {
+//         when redeemer is {
+//           SpendAction.VerifySignatureChunk(_) | SpendAction.VerifyFullSignature(_) -> builtin.serialise_data(Pair(purpose, #[0]))
+//           _ -> builtin.serialise_data(redeemer_pair)
+//         }
+//       } else {
+//         builtin.serialise_data(redeemer_pair)
+//       }
+//       bytearray.concat(acc, redeemer_bytes)
+//     })
 
-  CustomTransactionIdBuilder {
-    ..self,
-    redeemers: Some(sanitized_redeemers)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     redeemers: Some(sanitized_redeemers)
+//   }
+// }
 
-fn with_datums(self: CustomTransactionIdBuilder, datums: Dict<DataHash, Data>) -> CustomTransactionIdBuilder {
-  let datums_bytes = builtin.serialise_data(datums)
+// fn with_datums(self: CustomTransactionIdBuilder, datums: Dict<DataHash, Data>) -> CustomTransactionIdBuilder {
+//   let datums_bytes = builtin.serialise_data(datums)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    datums: Some(datums_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     datums: Some(datums_bytes)
+//   }
+// }
 
-fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>) -> CustomTransactionIdBuilder {
-  let votes_bytes = builtin.serialise_data(votes)
+// fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>) -> CustomTransactionIdBuilder {
+//   let votes_bytes = builtin.serialise_data(votes)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    votes: Some(votes_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     votes: Some(votes_bytes)
+//   }
+// }
 
-fn with_proposal_procedures(self: CustomTransactionIdBuilder, proposal_procedures: List<ProposalProcedure>) -> CustomTransactionIdBuilder {
-  let proposal_procedures_bytes = builtin.serialise_data(proposal_procedures)
+// fn with_proposal_procedures(self: CustomTransactionIdBuilder, proposal_procedures: List<ProposalProcedure>) -> CustomTransactionIdBuilder {
+//   let proposal_procedures_bytes = builtin.serialise_data(proposal_procedures)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    proposal_procedures: Some(proposal_procedures_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     proposal_procedures: Some(proposal_procedures_bytes)
+//   }
+// }
 
-fn with_current_treasury_amount(self: CustomTransactionIdBuilder, current_treasury_amount: Option<Lovelace>) -> CustomTransactionIdBuilder {
-  let current_treasury_amount_bytes = builtin.serialise_data(current_treasury_amount)
+// fn with_current_treasury_amount(self: CustomTransactionIdBuilder, current_treasury_amount: Option<Lovelace>) -> CustomTransactionIdBuilder {
+//   let current_treasury_amount_bytes = builtin.serialise_data(current_treasury_amount)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    current_treasury_amount: Some(current_treasury_amount_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     current_treasury_amount: Some(current_treasury_amount_bytes)
+//   }
+// }
 
-fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: Option<Lovelace>) -> CustomTransactionIdBuilder {
-  let treasury_donation_bytes = builtin.serialise_data(treasury_donation)
+// fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: Option<Lovelace>) -> CustomTransactionIdBuilder {
+//   let treasury_donation_bytes = builtin.serialise_data(treasury_donation)
 
-  CustomTransactionIdBuilder {
-    ..self,
-    treasury_donation: Some(treasury_donation_bytes)
-  }
-}
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     treasury_donation: Some(treasury_donation_bytes)
+//   }
+// }
 
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
   let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
