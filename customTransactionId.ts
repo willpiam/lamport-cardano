@@ -14,7 +14,7 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, getInputIndices, TxSignBuilder, UTxO } from "npm:@lucid-evolution/lucid";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution} from "npm:@lucid-evolution/lucid";
 import { Value, ValidityRange, ReferenceInputs } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 
@@ -44,14 +44,24 @@ export class CustomTransactionIdBuilder {
 
     constructor() {}
 
-    public static async customTransactionId(tx: TxSignBuilder) {
+    public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution) {
         const txObj = tx.toJSON() as any
-        // console.log(txObj)
+        const referenceInputs : UTxO[] = await lucid
+            .utxosByOutRef((txObj.body.reference_inputs ?? [])
+                .map((input: any) => ({
+                    txHash: input.transaction_id,
+                    outputIndex: input.index,
+                }))
+            )
+        // console.log(`%creference_inputs: `, txObj.body.reference_inputs, "color: green")
+        console.log(txObj.body.reference_inputs)
+        console.log(referenceInputs)
+        console.log(`%ccustomTransactionId referenceInputs: ${referenceInputs.length}`, "color: green")
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
-            .withReferenceInputs(txObj.body.reference_inputs ?? [])
+            .withReferenceInputs(referenceInputs)
             // .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
             .build()
     }
@@ -117,9 +127,11 @@ export class CustomTransactionIdBuilder {
     }
 
     withReferenceInputs(reference_inputs: UTxO[]) {
-        // TODO: process reference_inputs before adding them to the builder
         const referenceInputs = reference_inputs.map((utxo) => getInput(utxo))
-        const serializedReferenceInputs = Data.to<ReferenceInputs>(referenceInputs, ReferenceInputs)
+        console.log(`%creferenceInputs: ${referenceInputs.length}`, "color: green")
+        const serializedReferenceInputs = Data.to<ReferenceInputs>(referenceInputs, ReferenceInputs, 
+            // {canonical: true}
+        )
         this.reference_inputs = fromHex(serializedReferenceInputs)
         return this
     }

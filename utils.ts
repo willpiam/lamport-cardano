@@ -7,6 +7,8 @@ import { Address, Credential, Datum, Input, Output, OutputReference, StakeCreden
 */
 
 function getAddress(addr: string): Address {
+    console.log("inside getAddress")
+    console.log(addr)
     const addressInfo = getAddressDetails(addr);
     const paymentHash = addressInfo.paymentCredential!.hash;
     const paymentType = addressInfo.paymentCredential?.type;
@@ -57,7 +59,10 @@ function getValue(assets: Assets): Value {
 }
 
 export function getInput(utxo: UTxO): Input {
+    console.log("inside getInput")
+    console.log(utxo)
     const outputReference: OutputReference = {
+        // transaction_id: utxo.transaction_id,
         transaction_id: utxo.txHash,
         output_index: BigInt(utxo.outputIndex)
     };
