@@ -223,6 +223,15 @@ fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: O
   }
 }
 
+fn with_current_treasury_amount(self: CustomTransactionIdBuilder, current_treasury_amount: Option<Lovelace>) -> CustomTransactionIdBuilder {
+  let current_treasury_amount_bytes = builtin.serialise_data(current_treasury_amount)
+
+  CustomTransactionIdBuilder {
+    ..self,
+    current_treasury_amount: Some(current_treasury_amount_bytes)
+  }
+}
+
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
   let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
     expect Some(element) = b
@@ -232,6 +241,7 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   expect Some(mint) = builder.mint
   let blob = mint
     |> attach(builder.treasury_donation)
+    |> attach(builder.current_treasury_amount)
     // |> attach(builder.validity_range)
   // let blob = reference_inputs 
   //   // |> attach(builder.reference_inputs)
@@ -254,21 +264,21 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
   trace @"inside custom_transaction_id"
   let builder = new_custom_transaction_id()
-  //                 // |> with_inputs(tx.inputs)
-  //                 // |> with_reference_inputs(tx.reference_inputs)
-  //                 // |> with_outputs(tx.outputs)
-  //                 // |> with_fee(tx.fee)
-            |> with_mint(tx.mint)
+                  |> with_mint(tx.mint)
+                  |> with_treasury_donation(tx.treasury_donation)
+                  |> with_current_treasury_amount(tx.current_treasury_amount)
+                     // |> with_validity_range(tx.validity_range)
+  //                 // |> with_extra_signatories(tx.extra_signatories)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
-            // |> with_validity_range(tx.validity_range)
-  //                 // |> with_extra_signatories(tx.extra_signatories)
-  //                 // |> with_redeemers(tx.redeemers)
-  //                 // |> with_datums(tx.datums)
   //                 // |> with_votes(tx.votes)
   //                 // |> with_proposal_procedures(tx.proposal_procedures)
-  //                 // |> with_current_treasury_amount(tx.current_treasury_amount)
-                  |> with_treasury_donation(tx.treasury_donation)
+  //                 // |> with_reference_inputs(tx.reference_inputs)
+  //                 // |> with_fee(tx.fee)
+  //                 // |> with_datums(tx.datums)
+  //                 // |> with_redeemers(tx.redeemers)
+  //                 // |> with_inputs(tx.inputs)
+  //                 // |> with_outputs(tx.outputs)
   build_custom_transaction_id(builder)
 }
 
