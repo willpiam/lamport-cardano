@@ -48,7 +48,8 @@ export class CustomTransactionIdBuilder {
         // console.log(txObj)
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
-            .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
+            .withTreasuryDonation(txObj.body.treasury_donation)
+            // .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
             .build()
     }
 
@@ -130,6 +131,18 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    withTreasuryDonation(treasury_donation: number | undefined) {
+        if (undefined === treasury_donation) {
+            console.log("%ctreasury donation is undefined, giving None", "color: purple")
+            this.treasury_donation = fromHex(Data.to(new Constr(1, [])))
+            return this
+        }
+        console.log(`treasury donation is ${treasury_donation}`)
+        const serializedTreasuryDonation = Data.to(new Constr(0, [BigInt(treasury_donation)]))
+        this.treasury_donation = fromHex(serializedTreasuryDonation)
+        return this
+    }
+
     withMint(mint: any) {
         const mintObj = Object.keys(mint)
             .reduce((acc, key) => {
@@ -144,11 +157,14 @@ export class CustomTransactionIdBuilder {
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
         assertExists(this.mint, "Mint must be defined in the build step")
-        assertExists(this.validity_range, "Validity range must be defined")
+        assertExists(this.treasury_donation, "Treasury donation must be defined in the build step")
+        // assertExists(this.validity_range, "Validity range must be defined")
 
-        const blob = new Uint8Array(this.mint.length + this.validity_range.length)
+        // const blob = new Uint8Array(this.mint.length + this.validity_range.length)
+        const blob = new Uint8Array(this.mint.length + this.treasury_donation.length)
         blob.set(this.mint, 0)
-        blob.set(this.validity_range, this.mint.length)
+        blob.set(this.treasury_donation, this.mint.length)
+        // blob.set(this.validity_range, this.mint.length)
         console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
         return await sha256(blob)
     }

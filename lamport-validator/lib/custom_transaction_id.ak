@@ -1,7 +1,8 @@
 use cardano/transaction.{ValidityRange, Transaction }
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256}
-use cardano/assets.{Value}
+use cardano/assets.{Value, Lovelace}
+use cardano/governance.{Voter, GovernanceActionId, Vote}
 // use cardano/address.{Credential}
 // use aiken/collection/dict.{Dict}
 // use aiken/collection/list
@@ -186,14 +187,14 @@ fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: Validit
 //   }
 // }
 
-// fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>) -> CustomTransactionIdBuilder {
-//   let votes_bytes = builtin.serialise_data(votes)
+fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>) -> CustomTransactionIdBuilder {
+  let votes_bytes = builtin.serialise_data(votes)
 
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     votes: Some(votes_bytes)
-//   }
-// }
+  CustomTransactionIdBuilder {
+    ..self,
+    votes: Some(votes_bytes)
+  }
+}
 
 // fn with_proposal_procedures(self: CustomTransactionIdBuilder, proposal_procedures: List<ProposalProcedure>) -> CustomTransactionIdBuilder {
 //   let proposal_procedures_bytes = builtin.serialise_data(proposal_procedures)
@@ -213,14 +214,14 @@ fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: Validit
 //   }
 // }
 
-// fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: Option<Lovelace>) -> CustomTransactionIdBuilder {
-//   let treasury_donation_bytes = builtin.serialise_data(treasury_donation)
+fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: Option<Lovelace>) -> CustomTransactionIdBuilder {
+  let treasury_donation_bytes = builtin.serialise_data(treasury_donation)
 
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     treasury_donation: Some(treasury_donation_bytes)
-//   }
-// }
+  CustomTransactionIdBuilder {
+    ..self,
+    treasury_donation: Some(treasury_donation_bytes)
+  }
+}
 
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
   let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
@@ -230,7 +231,8 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
 
   expect Some(mint) = builder.mint
   let blob = mint
-    |> attach(builder.validity_range)
+    |> attach(builder.treasury_donation)
+    // |> attach(builder.validity_range)
   // let blob = reference_inputs 
   //   // |> attach(builder.reference_inputs)
   //   // |> attach(builder.outputs)
@@ -259,14 +261,14 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
             |> with_mint(tx.mint)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
-            |> with_validity_range(tx.validity_range)
+            // |> with_validity_range(tx.validity_range)
   //                 // |> with_extra_signatories(tx.extra_signatories)
   //                 // |> with_redeemers(tx.redeemers)
   //                 // |> with_datums(tx.datums)
   //                 // |> with_votes(tx.votes)
   //                 // |> with_proposal_procedures(tx.proposal_procedures)
   //                 // |> with_current_treasury_amount(tx.current_treasury_amount)
-  //                 // |> with_treasury_donation(tx.treasury_donation)
+                  |> with_treasury_donation(tx.treasury_donation)
   build_custom_transaction_id(builder)
 }
 

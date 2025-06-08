@@ -104,6 +104,11 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
+    
+    // show the treasury donation
+    console.log("%ctreasury donation", "color: hotpink")
+    console.log((dummyTx.toJSON() as any).body.treasury_donation)
+
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
@@ -126,6 +131,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     assert((tx.toJSON() as any).body.ttl === (dummyTx.toJSON() as any).body.ttl, "ttl must be the same on dummy and real transactions")
     assert((tx.toJSON() as any).body.validity_interval_start === (dummyTx.toJSON() as any).body.validity_interval_start, "validity interval start must be the same on dummy and real transactions")
 
+    
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()
     await lucid.awaitTx(txHash)
@@ -137,8 +143,15 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
 // off chain then on chain versions of blob
 // off chain (canonical unspecified on validity range)
-/// a1581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfa1474d79546f6b656e01d8799fd8799fd87a9f1 4ffd87a80ffd8799fd87a9f190398                             ffd87 a 80ffff
+/// a1581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfa1474d79546f6b656e01|d8799fd8799fd87a9f1 4ffd87a80ffd8799fd87a9f190398                             ffd87 a 80ffff
 // off chain (canonical set to true on validity range)
-/// a1581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfa1474d79546f6b656e01d879 82d87982d87a8114d87a80d87982d87a81190398d87a80 
+/// a1581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfa1474d79546f6b656e01|d879 82d87982d87a8114d87a80d87982d87a81190398d87a80 
 // on chain
-/// A1581CD441227553A0F1A965FEE7D60A0F724B368DD1BDDBC208730FCCEBCFA1474D79546F6B656E01D8799FD8799FD87A9F1 B0000019746ED03DDFFD87A80FFD8799FD87A9F1B0000019746FABF7D FFD87 9 80FFFF
+/// A1581CD441227553A0F1A965FEE7D60A0F724B368DD1BDDBC208730FCCEBCFA1474D79546F6B656E01|D8799FD8799FD87A9F1 B0000019746ED03DDFFD87A80FFD8799FD87A9F1B0000019746FABF7D FFD87 9 80FFFF
+
+
+
+// on-chain validity range bytes
+/// D8799FD8799FD87A9F1 B000001974CE5414CFFD87A80FFD8799FD87A9F1B000001974CF2FCECFFD87980FFFF
+// off-chain validity range bytes
+/// d8799fd8799fd87a9f1 4ffd87a80ffd8799fd87a9f190398ffd87a80ffff
