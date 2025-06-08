@@ -14,8 +14,9 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, TxSignBuilder } from "npm:@lucid-evolution/lucid";
-import { Value, ValidityRange } from "./datatypes/index.ts";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO } from "npm:@lucid-evolution/lucid";
+import { Value, ValidityRange, ReferenceInputs } from "./datatypes/index.ts";
+import { getInput } from "./utils.ts";
 
 const show = (x: any) => {
     console.log(`%c${x}`, "color: hotpink");
@@ -50,6 +51,7 @@ export class CustomTransactionIdBuilder {
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
+            .withReferenceInputs(txObj.body.reference_inputs ?? [])
             // .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
             .build()
     }
@@ -114,9 +116,11 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
-    withReferenceInputs(reference_inputs: any[]) {
+    withReferenceInputs(reference_inputs: UTxO[]) {
         // TODO: process reference_inputs before adding them to the builder
-        this.reference_inputs = new Uint8Array()
+        const referenceInputs = reference_inputs.map((utxo) => getInput(utxo))
+        const serializedReferenceInputs = Data.to<ReferenceInputs>(referenceInputs, ReferenceInputs)
+        this.reference_inputs = fromHex(serializedReferenceInputs)
         return this
     }
    
@@ -166,6 +170,7 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+
     // todo: 'with' functions should build the blob
     //       build will just hash it 
     async build() : Promise<CustomTransactionId> {
@@ -173,17 +178,20 @@ export class CustomTransactionIdBuilder {
         assertExists(this.mint, "Mint must be defined in the build step")
         assertExists(this.treasury_donation, "Treasury donation must be defined in the build step")
         assertExists(this.current_treasury_amount, "Current treasury amount must be defined in the build step")
+        assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
         // assertExists(this.validity_range, "Validity range must be defined")
 
         // const blob = new Uint8Array(this.mint.length + this.validity_range.length)
         const blob = new Uint8Array(
             this.mint.length + 
             this.treasury_donation.length + 
-            this.current_treasury_amount.length
+            this.current_treasury_amount.length +
+            this.reference_inputs.length
         )
         blob.set(this.mint, 0)
         blob.set(this.treasury_donation, this.mint.length)
         blob.set(this.current_treasury_amount, this.mint.length + this.treasury_donation.length)
+        blob.set(this.reference_inputs, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length)
         console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
         return await sha256(blob)
     }

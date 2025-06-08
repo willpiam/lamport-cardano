@@ -89,6 +89,19 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         console.log("%clocked 5 ada in the validator", "color: yellow")
     })
 
+    // step: create a reference input
+    // await t.step("create a reference input", async () => {
+    //     const tx = await lucid.newTx()
+    //         .pay.ToContract(scriptAddress, { kind: "inline", value: Data.to(fromText("This will be a reference input"))}, {
+    //             lovelace: 5_000_000n,
+    //         })
+    //         .complete()
+        
+    //     const signed = await tx.sign.withWallet().complete()
+    //     const txHash = await signed.submit()
+    //     await lucid.awaitTx(txHash)
+    // });
+
     const validFrom = emulator.now();
     const validTo = validFrom + 900000;
 
@@ -104,11 +117,9 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
-    
-    // show the treasury donation
-    console.log("%ctreasury donation", "color: hotpink")
-    console.log((dummyTx.toJSON() as any).body.treasury_donation)
-
+    console.log(dummyTx.toJSON())
+    // save dummy tx to dummytx.json
+    Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))

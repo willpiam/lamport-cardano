@@ -1,11 +1,11 @@
-use cardano/transaction.{ValidityRange, Transaction }
+use cardano/transaction.{ValidityRange, Transaction, Input }
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256}
 use cardano/assets.{Value, Lovelace}
 use cardano/governance.{Voter, GovernanceActionId, Vote}
 // use cardano/address.{Credential}
 // use aiken/collection/dict.{Dict}
-// use aiken/collection/list
+use aiken/collection/list
 use aiken/primitive/bytearray
 // use helpers.{SpendAction}
 
@@ -81,14 +81,14 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
 //   }
 // }
 
-// fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
-//   let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
+fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
+  let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
 
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     reference_inputs: Some(reference_inputs_bytes),
-//   }
-// }
+  CustomTransactionIdBuilder {
+    ..self,
+    reference_inputs: Some(reference_inputs_bytes),
+  }
+}
 
 // fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
 //   let outputs_bytes = builtin.serialise_data(outputs)
@@ -242,6 +242,7 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   let blob = mint
     |> attach(builder.treasury_donation)
     |> attach(builder.current_treasury_amount)
+    |> attach(builder.reference_inputs)
     // |> attach(builder.validity_range)
   // let blob = reference_inputs 
   //   // |> attach(builder.reference_inputs)
@@ -267,6 +268,7 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_mint(tx.mint)
                   |> with_treasury_donation(tx.treasury_donation)
                   |> with_current_treasury_amount(tx.current_treasury_amount)
+                  |> with_reference_inputs(tx.reference_inputs)
                      // |> with_validity_range(tx.validity_range)
   //                 // |> with_extra_signatories(tx.extra_signatories)
   //                 // |> with_certificates(tx.certificates)

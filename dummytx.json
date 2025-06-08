@@ -1,0 +1,66 @@
+{
+  "body": {
+    "inputs": [
+      {
+        "transaction_id": "c8d2a0a7448eda9479913be7061aad24ed75d909e77c9a692cd4d50efb54d2e4",
+        "index": 1
+      }
+    ],
+    "outputs": [
+      {
+        "AlonzoFormatTxOut": {
+          "address": "addr_test1qz4mfnvnnr6xemm887jf80wqeam392gtft2mdxg4w3u5ggp2u8vyshqywq6rgflcw8falm8nm6x8h2whjzzc364se56qv0xmht",
+          "amount": {
+            "coin": 94661430,
+            "multiasset": {
+              "d441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcf": {
+                "4d79546f6b656e": 1
+              }
+            }
+          },
+          "datum_hash": null
+        }
+      }
+    ],
+    "fee": 169769,
+    "ttl": 920,
+    "certs": null,
+    "withdrawals": null,
+    "auxiliary_data_hash": null,
+    "validity_interval_start": 20,
+    "mint": {
+      "d441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcf": {
+        "4d79546f6b656e": 1
+      }
+    },
+    "script_data_hash": null,
+    "collateral_inputs": null,
+    "required_signers": null,
+    "network_id": null,
+    "collateral_return": null,
+    "total_collateral": null,
+    "reference_inputs": null,
+    "voting_procedures": null,
+    "proposal_procedures": null,
+    "current_treasury_value": null,
+    "donation": null
+  },
+  "witness_set": {
+    "vkeywitnesses": null,
+    "native_scripts": [
+      {
+        "ScriptAll": {
+          "native_scripts": []
+        }
+      }
+    ],
+    "bootstrap_witnesses": null,
+    "plutus_v1_scripts": null,
+    "plutus_datums": null,
+    "redeemers": null,
+    "plutus_v2_scripts": null,
+    "plutus_v3_scripts": null
+  },
+  "is_valid": true,
+  "auxiliary_data": null
+}
