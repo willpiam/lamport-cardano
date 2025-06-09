@@ -87,7 +87,6 @@ const OutputReferenceSchema = Data.Object({
 export type OutputReference = Data.Static<typeof OutputReferenceSchema>;
 export const OutputReference = OutputReferenceSchema as unknown as OutputReference;
 
-
 const OutputSchema = Data.Object({
     address: AddressSchema,
     value: ValueSchema,

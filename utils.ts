@@ -53,16 +53,16 @@ function getValue(assets: Assets): Value {
             assetMap.set(assetName, currentValue + v);
         }
     }
-    const serialise = Data.to(value, Value, { canonical: true });
+    const serialise = Data.to(value, Value, 
+        { canonical: true}
+    );
 
     return Data.from(serialise, Value);
 }
 
 export function getInput(utxo: UTxO): Input {
-    console.log("inside getInput")
-    console.log(utxo)
+    console.log("inside getInput: ", utxo)
     const outputReference: OutputReference = {
-        // transaction_id: utxo.transaction_id,
         transaction_id: utxo.txHash,
         output_index: BigInt(utxo.outputIndex)
     };
@@ -70,6 +70,7 @@ export function getInput(utxo: UTxO): Input {
     const address = getAddress(utxo.address);
     const value = getValue(utxo.assets);
     const datum = getDatum(utxo.datumHash, utxo.datum);
+    console.log("datum: ", datum)
     const referenceScript = utxo.scriptRef?.script || null;
     const output: Output = {
         address: address,
@@ -78,13 +79,10 @@ export function getInput(utxo: UTxO): Input {
         reference_script: referenceScript
     };
 
-    // const input = Data.to({
-    //     output_reference: outputReference,
-    //     output: output
-    // }, Input)
     const input: Input = {
         output_reference: outputReference,
         output: output
     }
+    // console.log("About to return input: ", input)
     return input;
 }
