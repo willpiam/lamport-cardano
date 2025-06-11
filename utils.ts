@@ -42,6 +42,7 @@ function getValue(assets: Assets): Value {
 
     for (const [k, v] of Object.entries(assets)) {
         const [policyId, assetName] = k == "lovelace" ? ["", ""] : [k.slice(0, 56), k.slice(56)];
+        console.log(`PolicyId is "${policyId}" asset name is "${assetName}"`)
         if (!value.has(policyId)) {
             value.set(policyId, new Map<string, bigint>());
         }
@@ -53,11 +54,14 @@ function getValue(assets: Assets): Value {
             assetMap.set(assetName, currentValue + v);
         }
     }
-    const serialise = Data.to(value, Value, 
-        { canonical: true}
-    );
+    // const serialise = Data.to(value, Value, 
+    //     { canonical: true}
+    // );
+    // console.log("%cvalue is " + serialise, "color: green")
 
-    return Data.from(serialise, Value);
+    // return Data.from(serialise);
+    // return Data.from(serialise, Value);
+    return value
 }
 
 export function getInput(utxo: UTxO): Input {
@@ -70,7 +74,6 @@ export function getInput(utxo: UTxO): Input {
     const address = getAddress(utxo.address);
     const value = getValue(utxo.assets);
     const datum = getDatum(utxo.datumHash, utxo.datum);
-    console.log("datum: ", datum)
     const referenceScript = utxo.scriptRef?.script || null;
     const output: Output = {
         address: address,

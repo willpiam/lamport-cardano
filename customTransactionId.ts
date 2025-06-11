@@ -128,10 +128,10 @@ export class CustomTransactionIdBuilder {
 
     withReferenceInputs(reference_inputs: UTxO[]) {
         const referenceInputs = reference_inputs.map((utxo) => getInput(utxo))
-        console.log(`%creferenceInputs: ${referenceInputs.length}`, "color: green")
         const serializedReferenceInputs = Data.to<ReferenceInputs>(referenceInputs, ReferenceInputs, 
-            // {canonical: true}
+            {canonical: true}
         )
+        console.log(`%cReference Inputs: ${serializedReferenceInputs}`, "color: green")
         this.reference_inputs = fromHex(serializedReferenceInputs)
         return this
     }

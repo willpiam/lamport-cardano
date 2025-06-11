@@ -83,6 +83,8 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
 
 fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
   let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
+  
+  trace @"reference inputs bytes " : reference_inputs_bytes
 
   CustomTransactionIdBuilder {
     ..self,
