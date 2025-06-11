@@ -1,0 +1,83 @@
+[
+   {
+      constructor: 0,
+      fields: [
+         {
+            constructor: 0,
+            fields: [
+               {
+                  bytes: "77df2be1797cc094d2bfc911b8548e259d31f1aa19c803636f0c60f9f82ecb5d"
+               },
+               {
+                  int: "0"
+               }
+            ]
+         },
+         {
+            constructor: 0,
+            fields: [
+               {
+                  constructor: 0,
+                  fields: [
+                     {
+                        constructor: 0,
+                        fields: [
+                           {
+                              bytes: "c4eb22307f02ff142745868f8bb346371685f9062b7b29ee95e8083c"
+                           }
+                        ]
+                     },
+                     {
+                        constructor: 0,
+                        fields: [
+                           {
+                              constructor: 0,
+                              fields: [
+                                 {
+                                    constructor: 0,
+                                    fields: [
+                                       {
+                                          bytes: "b0a29cadbc43a7fcd8f3042bcd07052ccea200f951d83f25cbef6791"
+                                       }
+                                    ]
+                                 }
+                              ]
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  map_0: {
+                     mapKey: {
+                        bytes: ""
+                     },
+                     mapValue: {
+                        map_0: {
+                           mapKey: {
+                              bytes: ""
+                           },
+                           mapValue: {
+                              int: "5000000"
+                           }
+                        }
+                     }
+                  }
+               },
+               {
+                  constructor: 2,
+                  fields: [
+                     {
+                        bytes: "546869732077696c6c2062652061207265666572656e636520696e707574"
+                     }
+                  ]
+               },
+               {
+                  constructor: 1,
+                  fields: []
+               }
+            ]
+         }
+      ]
+   }
+]
