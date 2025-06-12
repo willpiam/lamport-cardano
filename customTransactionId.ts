@@ -18,11 +18,6 @@ import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution} fro
 import { Value, ValidityRange, ReferenceInputs } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 
-const show = (x: any) => {
-    console.log(`%c${x}`, "color: hotpink");
-    return x;
-}
-
 export type CustomTransactionId = Uint8Array
 
 export class CustomTransactionIdBuilder {
@@ -48,21 +43,17 @@ export class CustomTransactionIdBuilder {
         const txObj = tx.toJSON() as any
         const referenceInputs : UTxO[] = await lucid
             .utxosByOutRef((txObj.body.reference_inputs ?? [])
-                .map((input: any) => ({
+                .map((input: {transaction_id: string, index: number}) => ({
                     txHash: input.transaction_id,
                     outputIndex: input.index,
                 }))
             )
-        // console.log(`%creference_inputs: `, txObj.body.reference_inputs, "color: green")
-        console.log(txObj.body.reference_inputs)
-        console.log(referenceInputs)
-        console.log(`%ccustomTransactionId referenceInputs: ${referenceInputs.length}`, "color: green")
+        
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(referenceInputs)
-            // .withValidityRange(txObj.body.validity_interval_start, txObj.body.ttl)
             .build()
     }
 

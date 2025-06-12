@@ -15,6 +15,7 @@ import {
   scriptFromNative,
   SpendingValidator,
   unixTimeToSlot,
+  UTxO,
   validatorToAddress,
 } from "npm:@lucid-evolution/lucid";
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
@@ -106,7 +107,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     });
 
     // find the reference input
-    const referenceInput = await (async () => {
+    const referenceInput : UTxO = await (async () => {
         const utxos = await lucid.utxosAt(referenceInputHolder.address)
         assert(utxos.length === 1, "expected 1 utxo in the reference input holder")
         return utxos[0]
@@ -123,7 +124,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .attach.MintingPolicy(simpleMintingPolicy)
         .validFrom(validFrom)
         .validTo(validTo)
-        // .readFrom([referenceInput])
+        .readFrom([referenceInput])
         .complete();
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid)
@@ -140,7 +141,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .attach.MintingPolicy(simpleMintingPolicy)
         .validFrom(validFrom)
         .validTo(validTo)
-        // .readFrom([referenceInput])
+        .readFrom([referenceInput])
         .complete()
     
     console.log("%cpassed complete ", "color: hotpink")
