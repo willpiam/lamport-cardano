@@ -123,7 +123,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .attach.MintingPolicy(simpleMintingPolicy)
         .validFrom(validFrom)
         .validTo(validTo)
-        .readFrom([referenceInput])
+        // .readFrom([referenceInput])
         .complete();
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid)
@@ -140,7 +140,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .attach.MintingPolicy(simpleMintingPolicy)
         .validFrom(validFrom)
         .validTo(validTo)
-        .readFrom([referenceInput])
+        // .readFrom([referenceInput])
         .complete()
     
     console.log("%cpassed complete ", "color: hotpink")

@@ -260,12 +260,12 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   // |> attach(builder.proposal_procedures)
   //   // |> attach(builder.current_treasury_amount)
   //   // |> attach(builder.treasury_donation)
-  trace @"blob": blob
+  // trace @"blob": blob
   sha2_256(blob)
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
-  trace @"inside custom_transaction_id"
+  // trace @"inside custom_transaction_id"
   let builder = new_custom_transaction_id()
                   |> with_mint(tx.mint)
                   |> with_treasury_donation(tx.treasury_donation)

@@ -1,0 +1,39 @@
+
+
+81                                      # array(1)
+   D8 79                                # tag(121)
+      82                                # array(2)
+         D8 79                          # tag(121)
+            82                          # array(2)
+               58 20                    # bytes(32)
+                  DD3072629F8202EB8AFE7328BFEC05DC28821D70CCEFE447EB1DC3D1CC18B9A2 # "\xDD0rb\x9F\x82\u0002\xEB\x8A\xFEs(\xBF\xEC\u0005\xDC(\x82\u001Dp\xCC\xEF\xE4G\xEB\u001D\xC3\xD1\xCC\u0018\xB9\xA2"
+               00                       # unsigned(0)
+         D8 79                          # tag(121)
+            84                          # array(4)
+               D8 79                    # tag(121)
+                  82                    # array(2)
+                     D8 79              # tag(121)
+                        81              # array(1)
+                           58 1C        # bytes(28)
+                              29EEB8129576B7C07309A3210E8AD20FD74B26054E11F7475876BAAE # ")\xEE\xB8\u0012\x95v\xB7\xC0s\t\xA3!\u000E\x8A\xD2\u000F\xD7K&\u0005N\u0011\xF7GXv\xBA\xAE"
+                     D8 79              # tag(121)
+                        81              # array(1)
+                           D8 79        # tag(121)
+                              81        # array(1)
+                                 D8 79  # tag(121)
+                                    81  # array(1)
+                                       58 1C # bytes(28)
+                                          99B353A39EA8EBA5AB2901B7F2A00F139AC96989FAA6D3618C3C9981 # "\x99\xB3S\xA3\x9E\xA8륫)\u0001\xB7\xF2\xA0\u000F\u0013\x9A\xC9i\x89\xFA\xA6\xD3a\x8C<\x99\x81"
+               A1                       # map(1)
+                  40                    # bytes(0)
+                                        # ""
+                  A1                    # map(1)
+                     40                 # bytes(0)
+                                        # ""
+                     1A 004C4B40        # unsigned(5000000)
+               D8 7B                    # tag(123)
+                  81                    # array(1)
+                     58 1E              # bytes(30)
+                        546869732077696C6C2062652061207265666572656E636520696E707574 # "This will be a reference input"
+               D8 7A                    # tag(122)
+                  80                    # array(0)

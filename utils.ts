@@ -1,4 +1,4 @@
-import { Assets, Data, getAddressDetails, UTxO } from "npm:@lucid-evolution/lucid";
+import { Assets, Constr, Data, getAddressDetails, UTxO } from "npm:@lucid-evolution/lucid";
 import { Address, Credential, Datum, Input, Output, OutputReference, StakeCredential, Value } from "./datatypes/index.ts";
 
 /*
@@ -54,14 +54,15 @@ function getValue(assets: Assets): Value {
             assetMap.set(assetName, currentValue + v);
         }
     }
-    // const serialise = Data.to(value, Value, 
-    //     { canonical: true}
-    // );
+    const serialise = Data.to<Value>(value, Value, 
+        { canonical: true}
+    );
     // console.log("%cvalue is " + serialise, "color: green")
 
     // return Data.from(serialise);
-    // return Data.from(serialise, Value);
-    return value
+    return Data.from<Value>(serialise, Value);
+    // return new Constr(0, [serialise])
+    // return value
 }
 
 export function getInput(utxo: UTxO): Input {

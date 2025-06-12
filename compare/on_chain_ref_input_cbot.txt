@@ -1,0 +1,53 @@
+9FD8799FD8799F5820EBB5B89F6166D7570486322E957E8A9629958E9A156CB8BA1B2BAEF7D4664A1C00FFD8799FD8799FD8799F581C671C9E90300ABB3A874F4D2BAEBAC88181AB1EDD430FC9B53BA2C430FFD8799FD8799FD8799F581CAB98C1278E05DB4960ABB250163570A8BCC18C8090EBA043FE3F2933FFFFFFFFA140A1401A004C4B40D87B9F581E546869732077696C6C2062652061207265666572656E636520696E707574FFD87A80FFFFFF
+
+
+
+9F                                      # array(*)
+   D8 79                                # tag(121)
+      9F                                # array(*)
+         D8 79                          # tag(121)
+            9F                          # array(*)
+               58 20                    # bytes(32)
+                  EBB5B89F6166D7570486322E957E8A9629958E9A156CB8BA1B2BAEF7D4664A1C # "뵸\x9Faf\xD7W\u0004\x862.\x95~\x8A\x96)\x95\x8E\x9A\u0015l\xB8\xBA\e+\xAE\xF7\xD4fJ\u001C"
+               00                       # unsigned(0)
+               FF                       # primitive(*)
+         D8 79                          # tag(121)
+            9F                          # array(*)
+               D8 79                    # tag(121)
+                  9F                    # array(*)
+                     D8 79              # tag(121)
+                        9F              # array(*)
+                           58 1C        # bytes(28)
+                              671C9E90300ABB3A874F4D2BAEBAC88181AB1EDD430FC9B53BA2C430 # "g\u001C\x9E\x900\n\xBB:\x87OM+\xAE\xBAȁ\x81\xAB\u001E\xDDC\u000Fɵ;\xA2\xC40"
+                           FF           # primitive(*)
+                     D8 79              # tag(121)
+                        9F              # array(*)
+                           D8 79        # tag(121)
+                              9F        # array(*)
+                                 D8 79  # tag(121)
+                                    9F  # array(*)
+                                       58 1C # bytes(28)
+                                          AB98C1278E05DB4960ABB250163570A8BCC18C8090EBA043FE3F2933 # "\xAB\x98\xC1'\x8E\u0005\xDBI`\xAB\xB2P\u00165p\xA8\xBC\xC1\x8C\x80\x90\xEB\xA0C\xFE?)3"
+                                       FF # primitive(*)
+                                 FF     # primitive(*)
+                           FF           # primitive(*)
+                     FF                 # primitive(*)
+               A1                       # map(1)
+                  40                    # bytes(0)
+                                        # ""
+                  A1                    # map(1)
+                     40                 # bytes(0)
+                                        # ""
+                     1A 004C4B40        # unsigned(5000000)
+
+                     
+               D8 7B                    # tag(123)
+                  9F                    # array(*)
+                     58 1E              # bytes(30)
+                        546869732077696C6C2062652061207265666572656E636520696E707574 # "This will be a reference input"
+                     FF                 # primitive(*)
+               D8 7A                    # tag(122)
+                  80                    # array(0)
+               FF                       # primitive(*)
+         FF                             # primitive(*)
+   FF                                   # primitive(*)

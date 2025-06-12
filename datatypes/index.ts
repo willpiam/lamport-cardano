@@ -5,12 +5,29 @@ import { Data } from "npm:@lucid-evolution/lucid";
     https://github.com/leobel/janus-wallet/blob/bdc66afe2e1bc2f13ee4873c5c03232d5e02327c/src/contract-types.ts
 */
 
+
+const PolicyIdSchema = Data.Bytes({ minLength: 0, maxLength: 28 });;
+export type PolicyId = Data.Static<typeof PolicyIdSchema>;
+export const PolicyId = PolicyIdSchema as unknown as PolicyId;
+
+const AssetNameSchema = Data.Bytes({ minLength: 0, maxLength: 32 });
+export type AssetName = Data.Static<typeof AssetNameSchema>;
+export const AssetName = AssetNameSchema as unknown as AssetName;
+
 export const ValueSchema = Data.Map(
-  Data.Bytes(),
+  PolicyIdSchema,
   Data.Map(
-    Data.Bytes(),
+    AssetNameSchema,
     Data.Integer(),
+    // {
+    //   minItems: 1,
+    //   maxItems: 1
+    // }
   ),
+  // {
+  //   minItems: 1,
+  //   maxItems: 1
+  // }
 );
 export type Value = Data.Static<typeof ValueSchema>;
 export const Value = ValueSchema as unknown as Value;

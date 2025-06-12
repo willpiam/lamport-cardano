@@ -2,16 +2,16 @@
   "body": {
     "inputs": [
       {
-        "transaction_id": "e52690e7749cdd91a2cec9e2ec5f37ee9ec5ad1ee318206abf90b29747827f32",
+        "transaction_id": "e7f094eb3f08230af8e5d1a34836906b1f631a750979a39fad0eb8aca7531fad",
         "index": 1
       }
     ],
     "outputs": [
       {
         "AlonzoFormatTxOut": {
-          "address": "addr_test1qr9all009c3c0xq4qqhc5g9wjla9gaw0efx3mxce246fxmmfmqca70cg7v40d0kdu7nt3nf4dt8t8863w5y84hy7prvs28z94k",
+          "address": "addr_test1qql220mac58vtqyff7dcq4nxlqlda8dxf0zsu5xsccfzgflxqjlfk0rzyq4qf9lpurvl09t4dywl7pfrn7d2p6de5pfqcxu044",
           "amount": {
-            "coin": 89489461,
+            "coin": 89491265,
             "multiasset": {
               "d441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcf": {
                 "4d79546f6b656e": 1
@@ -22,7 +22,7 @@
         }
       }
     ],
-    "fee": 171617,
+    "fee": 169813,
     "ttl": 940,
     "certs": null,
     "withdrawals": null,
@@ -39,12 +39,7 @@
     "network_id": null,
     "collateral_return": null,
     "total_collateral": null,
-    "reference_inputs": [
-      {
-        "transaction_id": "e52690e7749cdd91a2cec9e2ec5f37ee9ec5ad1ee318206abf90b29747827f32",
-        "index": 0
-      }
-    ],
+    "reference_inputs": null,
     "voting_procedures": null,
     "proposal_procedures": null,
     "current_treasury_value": null,
