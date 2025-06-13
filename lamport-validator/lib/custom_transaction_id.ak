@@ -116,11 +116,9 @@ fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: Lis
 // }
 
 fn with_mint(self: CustomTransactionIdBuilder, mint: Value) -> CustomTransactionIdBuilder {
-  let mint_bytes = builtin.serialise_data(mint)
-
   CustomTransactionIdBuilder {
     ..self,
-    mint: Some(mint_bytes),
+    mint: Some(builtin.serialise_data(mint)),
   }
 }
 
@@ -222,20 +220,16 @@ fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<Govern
 // }
 
 fn with_treasury_donation(self: CustomTransactionIdBuilder, treasury_donation: Option<Lovelace>) -> CustomTransactionIdBuilder {
-  let treasury_donation_bytes = builtin.serialise_data(treasury_donation)
-
   CustomTransactionIdBuilder {
     ..self,
-    treasury_donation: Some(treasury_donation_bytes)
+    treasury_donation: Some(builtin.serialise_data(treasury_donation))
   }
 }
 
 fn with_current_treasury_amount(self: CustomTransactionIdBuilder, current_treasury_amount: Option<Lovelace>) -> CustomTransactionIdBuilder {
-  let current_treasury_amount_bytes = builtin.serialise_data(current_treasury_amount)
-
   CustomTransactionIdBuilder {
     ..self,
-    current_treasury_amount: Some(current_treasury_amount_bytes)
+    current_treasury_amount: Some(builtin.serialise_data(current_treasury_amount))
   }
 }
 
