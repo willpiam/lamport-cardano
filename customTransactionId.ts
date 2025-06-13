@@ -47,8 +47,7 @@ export class CustomTransactionIdBuilder {
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
-            // .withReferenceInputs(referenceInputs, txBody)
-            .withReferenceInputs(txObj.body.reference_inputs)
+            .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .build()
     }
 

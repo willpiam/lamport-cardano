@@ -2,16 +2,16 @@
   "body": {
     "inputs": [
       {
-        "transaction_id": "f434d98cd5395497c3a413c67556c9e8986e0523286822d7b9215285ac29e11a",
+        "transaction_id": "e8ba42979c2dcf74aad9464ce623d779c2e405ad9880e1638b3d7657dfd4ab9d",
         "index": 1
       }
     ],
     "outputs": [
       {
         "AlonzoFormatTxOut": {
-          "address": "addr_test1qzecjf52e6x3nsjw4kjfm98f4amz7ncumqvq7ckc58hmustda83l2vjx23w7zcwxprp2ue8664ql35z5axp0449n9kas963sp7",
+          "address": "addr_test1qrsk56qnx77tvz9zlqszwg0dw5nnwzqeezmd0e35w0dm8mul5avudgaql6z65djhtt76at0ts6jye34azk5qpv8yvp9snwygq6",
           "amount": {
-            "coin": 89312740,
+            "coin": 589312740,
             "multiasset": {
               "d441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcf": {
                 "4d79546f6b656e": 1
@@ -41,7 +41,7 @@
     "total_collateral": null,
     "reference_inputs": [
       {
-        "transaction_id": "f434d98cd5395497c3a413c67556c9e8986e0523286822d7b9215285ac29e11a",
+        "transaction_id": "e8ba42979c2dcf74aad9464ce623d779c2e405ad9880e1638b3d7657dfd4ab9d",
         "index": 0
       }
     ],

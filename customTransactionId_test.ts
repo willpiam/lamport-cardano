@@ -1,6 +1,7 @@
 import { assertExists } from "@std/assert/exists";
 import { CustomTransactionIdBuilder, CustomTransactionId } from "./customTransactionId.ts";
 import {
+Anchor,
   applyParamsToScript,
   Constr,
   Data,
@@ -17,6 +18,7 @@ import {
   unixTimeToSlot,
   UTxO,
   validatorToAddress,
+  walletFromSeed,
 } from "npm:@lucid-evolution/lucid@0.4.29";
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
 import { assert } from "node:console";
@@ -24,10 +26,8 @@ import { SpendAction } from "./mirror-types.ts";
 import { toHex } from "npm:@blaze-cardano/core";
 
 const alice = generateEmulatorAccount({
-  lovelace: 100_000_000n, // 100 ada
+  lovelace: 600_000_000n, // 500 + 100 ada
 });
-
-
 
 const emulator = new Emulator([alice]);
 const lucid = await Lucid(emulator, "Custom");
@@ -39,24 +39,33 @@ const simpleMintingPolicy = scriptFromNative({
 });
 const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 
-// Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
-//     const validFrom = emulator.now();
-//     const validTo = validFrom + 900000;
-//     const tx = await lucid.newTx()
-//         .mintAssets({
-//             [simplePolicyId + fromText("MyToken")]: 1n,
-//         })
-//         .attach.MintingPolicy(simpleMintingPolicy)
-//         .pay.ToAddress(await lucid.wallet().address(), {
-//             lovelace: 1_000_000n,
-//         })
-//         .validFrom(validFrom)
-//         .validTo(validTo)
-//         .complete()
+Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
+    const validFrom = emulator.now();
+    const validTo = validFrom + 900000;
 
-//     const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid)
-//     console.log(customTransactionId)
-// });
+    const chuck = generateEmulatorAccount({});
+    console.log('alice address ' + alice.address)
+    console.log(alice)
+    const stakeAddress = await lucid.wallet().rewardAddress()
+    assertExists(stakeAddress)
+
+    const tx = await lucid.newTx()
+        .mintAssets({
+            [simplePolicyId + fromText("MyToken")]: 1n,
+        })
+        .attach.MintingPolicy(simpleMintingPolicy)
+        .pay.ToAddress(await lucid.wallet().address(), {
+            lovelace: 1_000_000n,
+        })
+        .validFrom(validFrom)
+        .validTo(validTo)
+        .register.DRep(stakeAddress)
+        .addSigner(chuck.address)
+        .complete()
+
+    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid)
+    console.log(customTransactionId)
+});
 
 Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
     // lock a utxo in the validator
