@@ -1,4 +1,4 @@
-use cardano/transaction.{ValidityRange, Transaction, Input }
+use cardano/transaction.{ValidityRange, Transaction, Input, OutputReference }
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256}
 use cardano/assets.{Value, Lovelace}
@@ -82,7 +82,12 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
 // }
 
 fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
-  let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
+  // let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
+  let reference_inputs_bytes = reference_inputs
+    |> list.map(fn (input: Input) -> OutputReference {
+      input.output_reference
+    })
+    |> builtin.serialise_data()
   
   trace @"reference inputs bytes " : reference_inputs_bytes
 

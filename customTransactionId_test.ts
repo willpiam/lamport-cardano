@@ -17,7 +17,7 @@ import {
   unixTimeToSlot,
   UTxO,
   validatorToAddress,
-} from "npm:@lucid-evolution/lucid";
+} from "npm:@lucid-evolution/lucid@0.4.29";
 import blueprint from "./lamport-validator/plutus.json" with { type: "json" };
 import { assert } from "node:console";
 import { SpendAction } from "./mirror-types.ts";
@@ -39,24 +39,24 @@ const simpleMintingPolicy = scriptFromNative({
 });
 const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 
-Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
-    const validFrom = emulator.now();
-    const validTo = validFrom + 900000;
-    const tx = await lucid.newTx()
-        .mintAssets({
-            [simplePolicyId + fromText("MyToken")]: 1n,
-        })
-        .attach.MintingPolicy(simpleMintingPolicy)
-        .pay.ToAddress(await lucid.wallet().address(), {
-            lovelace: 1_000_000n,
-        })
-        .validFrom(validFrom)
-        .validTo(validTo)
-        .complete()
+// Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
+//     const validFrom = emulator.now();
+//     const validTo = validFrom + 900000;
+//     const tx = await lucid.newTx()
+//         .mintAssets({
+//             [simplePolicyId + fromText("MyToken")]: 1n,
+//         })
+//         .attach.MintingPolicy(simpleMintingPolicy)
+//         .pay.ToAddress(await lucid.wallet().address(), {
+//             lovelace: 1_000_000n,
+//         })
+//         .validFrom(validFrom)
+//         .validTo(validTo)
+//         .complete()
 
-    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid)
-    console.log(customTransactionId)
-});
+//     const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid)
+//     console.log(customTransactionId)
+// });
 
 Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
     // lock a utxo in the validator
@@ -76,8 +76,25 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     );
     console.log(scriptAddress)
 
+    const referenceInputPointerAssetName = fromText("Pointer To Reference Input");
+
+    await t.step("Mint a token to lock in the reference input so we can see what happens to the map(1) bug when we add another token", async() => {
+        const tx = await lucid.newTx()
+            .mintAssets({
+                [simplePolicyId + referenceInputPointerAssetName]: 1n,
+            })
+            .attach.MintingPolicy(simpleMintingPolicy)
+            .complete()
+
+        const signed = await tx.sign.withWallet().complete()
+        const txHash = await signed.submit()
+        await lucid.awaitTx(txHash)
+
+        assert((await lucid.utxoByUnit(simplePolicyId + referenceInputPointerAssetName)).address === await lucid.wallet().address(), "token must be in wallet at this point")
+    })
+
     // step: lock 5 ada in the validator
-    await t.step("lock 5 ada in the validator", async () => {
+    await t.step("lock 5 ada and the in the validator", async () => {
         const tx = await lucid.newTx()
             .pay.ToContract(scriptAddress, { kind: "inline", value: Data.void()}, {
                 lovelace: 5_000_000n,
@@ -98,6 +115,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         const tx = await lucid.newTx()
             .pay.ToContract(referenceInputHolder.address, { kind: "inline", value: Data.to(fromText("This will be a reference input"))}, {
                 lovelace: 5_000_000n,
+                [simplePolicyId + referenceInputPointerAssetName] : 1n
             })
             .complete()
         

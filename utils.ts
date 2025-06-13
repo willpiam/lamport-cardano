@@ -1,4 +1,4 @@
-import { Assets, Constr, Data, getAddressDetails, UTxO } from "npm:@lucid-evolution/lucid";
+import { Assets, Constr, Data, getAddressDetails, UTxO } from "npm:@lucid-evolution/lucid@0.4.29";
 import { Address, Credential, Datum, Input, Output, OutputReference, StakeCredential, Value } from "./datatypes/index.ts";
 
 /*

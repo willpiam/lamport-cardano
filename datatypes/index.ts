@@ -1,4 +1,4 @@
-import { Data } from "npm:@lucid-evolution/lucid";
+import { Data } from "npm:@lucid-evolution/lucid@0.4.29";
 
 /*
   Some sources used: 
@@ -103,6 +103,10 @@ const OutputReferenceSchema = Data.Object({
 });
 export type OutputReference = Data.Static<typeof OutputReferenceSchema>;
 export const OutputReference = OutputReferenceSchema as unknown as OutputReference;
+
+const OutputReferenceListSchema = Data.Array(OutputReferenceSchema)
+export type OutputReferenceList = Data.Static<typeof OutputReferenceListSchema>
+export const OutputReferenceList = OutputReferenceListSchema as unknown as OutputReferenceList
 
 const OutputSchema = Data.Object({
     address: AddressSchema,

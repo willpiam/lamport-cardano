@@ -14,9 +14,10 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution} from "npm:@lucid-evolution/lucid";
-import { Value, ValidityRange, ReferenceInputs } from "./datatypes/index.ts";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML} from "npm:@lucid-evolution/lucid@0.4.29";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
+import { encode } from "node:punycode";
 
 export type CustomTransactionId = Uint8Array
 
@@ -41,19 +42,25 @@ export class CustomTransactionIdBuilder {
 
     public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution) {
         const txObj = tx.toJSON() as any
-        const referenceInputs : UTxO[] = await lucid
-            .utxosByOutRef((txObj.body.reference_inputs ?? [])
-                .map((input: {transaction_id: string, index: number}) => ({
-                    txHash: input.transaction_id,
-                    outputIndex: input.index,
-                }))
-            )
+        // const referenceInputs : UTxO[] = await lucid
+        //     .utxosByOutRef((txObj.body.reference_inputs ?? [])
+        //         .map((input: {transaction_id: string, index: number}) => ({
+        //             txHash: input.transaction_id,
+        //             outputIndex: input.index,
+        //         }))
+        //     )
+
+        const txBody : CML.TransactionBody = tx.toTransaction().body()
+        console.log("tx body ref ins", txBody.reference_inputs())
         
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
-            .withReferenceInputs(referenceInputs)
+            // .withReferenceInputs(referenceInputs, txBody)
+            .withReferenceInputs(txObj.body.reference_inputs
+                .map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
+            )
             .build()
     }
 
@@ -117,13 +124,32 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
-    withReferenceInputs(reference_inputs: UTxO[]) {
-        const referenceInputs = reference_inputs.map((utxo) => getInput(utxo))
-        const serializedReferenceInputs = Data.to<ReferenceInputs>(referenceInputs, ReferenceInputs, 
-            // {canonical: true}
-        )
-        console.log(`%cReference Inputs: ${serializedReferenceInputs}`, "color: green")
-        this.reference_inputs = fromHex(serializedReferenceInputs)
+    // withReferenceInputs(reference_inputs: UTxO[], txBody : CML.TransactionBody) {
+    withReferenceInputs(reference_inputs: any[]) {
+        console.log(`reference inputs: `, reference_inputs)
+        // const encoded : string[] = reference_inputs.map(input => Data.to(input, OutputReference))
+        const encoded : string = Data.to(reference_inputs, OutputReferenceList)
+        this.reference_inputs = fromHex(encoded)
+        
+        // const allTogether = encoded.reduce((acc, curr) => acc + curr, "")
+        // this.reference_inputs = fromHex(allTogether)
+
+        // const referenceInputs = reference_inputs.map((utxo) => getInput(utxo))
+        // const serializedReferenceInputs = Data.to<ReferenceInputs>(referenceInputs, ReferenceInputs, 
+        //     // {canonical: true}
+        // )
+        // console.log(`%cReference Inputs: ${serializedReferenceInputs}`, "color: green")
+        // const serializedReferenceInputs : CML.TransactionInputList | undefined = txBody.reference_inputs()
+        // assertExists(serializedReferenceInputs, "must have serialized ref inputs")
+        // console.log("Serilized reference inputs: ", serializedReferenceInputs)
+        // const refInputsRaw = [] as string[];
+        // for (let i = 0; i < serializedReferenceInputs.len(); i++) {
+        //     const input : CML.TransactionInput = serializedReferenceInputs.get(i);
+        //     console.log("input ---> ", input.to_js_value())
+        //     refInputsRaw.push(input.to_canonical_cbor_hex())
+        //     console.log(`Reference input ${i} is ${refInputsRaw[i]}`)
+        // }
+        // this.reference_inputs = fromHex(serializedReferenceInputs ?? "00")
         return this
     }
    
