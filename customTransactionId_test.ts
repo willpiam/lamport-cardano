@@ -27,7 +27,7 @@ import { SpendAction } from "./mirror-types.ts";
 import { toHex } from "npm:@blaze-cardano/core";
 
 const alice = generateEmulatorAccount({
-  lovelace: 700_000_000n, // 500 + 100 ada
+  lovelace: 700_000_000_000n, // 500 + 100 ada
 });
 
 const emulator = new Emulator([alice]);
@@ -73,7 +73,7 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
     console.log(customTransactionId)
 });
 
-Deno.test.only("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
+Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
     // lock a utxo in the validator
     assert(blueprint.validators.map(v => v.title).includes("custom_transaction_id_minimal.custom_transaction_id_minimal.spend"), "custom_transaction_id_minimal validator not found");
     const rawValidator = blueprint.validators.find((v) => v.title === "custom_transaction_id_minimal.custom_transaction_id_minimal.spend")!.compiledCode;
@@ -109,10 +109,19 @@ Deno.test.only("Custom Transaction Id - spend from custom_transaction_id_minimal
     })
 
     // step: lock 5 ada in the validator
-    await t.step("lock 5 ada and the in the validator", async () => {
+    await t.step("lock 5 ada and the in the validator * create new utxos for self", async () => {
         const tx = await lucid.newTx()
             .pay.ToContract(scriptAddress, { kind: "inline", value: Data.void()}, {
                 lovelace: 5_000_000n,
+            })
+            .pay.ToAddress(await lucid.wallet().address(), {
+                lovelace: 500_000_000n,
+            })
+            .pay.ToAddress(await lucid.wallet().address(), {
+                lovelace: 700_000_000n,
+            })
+            .pay.ToAddress(await lucid.wallet().address(), {
+                lovelace: 700_000_000n,
             })
             .complete()
 
@@ -170,8 +179,12 @@ Deno.test.only("Custom Transaction Id - spend from custom_transaction_id_minimal
 
     console.log("STUB: saved dummy tx")
 
+    const scriptUtxos = await lucid.utxosAt(scriptAddress)
+    console.log(`${scriptUtxos.length} utxos in the validator`)
+    assert(scriptUtxos.length === 1, "expected 1 utxo in the validator")
+
     const tx = await lucid.newTx()
-        .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
+        .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature(message))
         .attach.SpendingValidator(validator)
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,

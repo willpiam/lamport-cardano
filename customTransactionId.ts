@@ -15,7 +15,7 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories } from "./datatypes/index.ts";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 import { encode } from "node:punycode";
 
@@ -42,7 +42,7 @@ export class CustomTransactionIdBuilder {
 
     public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = []) {
         const txObj = tx.toJSON() as any
-        console.log(txObj)
+        // console.log(txObj)
       
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
@@ -175,7 +175,22 @@ export class CustomTransactionIdBuilder {
 
     withCertificates(certificates: any[]) {
         console.log("Certificates: ", certificates)
-
+        const formated = certificates.map((cert: any) => {
+            if (Object.keys(cert).includes("RegDrepCert")) {
+                return {
+                    RegisterCredential: {
+                        delegate_representative: {
+                            VerificationKey: cert.RegDrepCert.drep_credential.PubKey.hash
+                        },
+                        deposit: cert.RegDrepCert.deposit, 
+                    }
+                }
+            }
+            return cert
+        })
+        console.log("Formated: ", formated)
+        const encoded = Data.to(formated, Certificates)
+        this.certificates = fromHex(encoded)
         return this
     }
 

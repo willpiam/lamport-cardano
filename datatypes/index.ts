@@ -4,7 +4,8 @@ import { Data } from "npm:@lucid-evolution/lucid@0.4.29";
   Some sources used: 
     https://github.com/leobel/janus-wallet/blob/bdc66afe2e1bc2f13ee4873c5c03232d5e02327c/src/contract-types.ts
 */
-
+export const HashBlake2b224Schema = Data.Bytes({ minLength: 28, maxLength: 28 });
+const StakePoolIdSchema = HashBlake2b224Schema;
 
 const PolicyIdSchema = Data.Bytes({ minLength: 0, maxLength: 28 });;
 export type PolicyId = Data.Static<typeof PolicyIdSchema>;
@@ -56,7 +57,6 @@ export type ValidityRange = Data.Static<typeof ValidityRangeSchema>;
 export const ValidityRange = ValidityRangeSchema as unknown as ValidityRange;
 
 
-export const HashBlake2b224Schema = Data.Bytes({ minLength: 28, maxLength: 28 });
 const HashBlake2b256Schema = Data.Bytes({ minLength: 32, maxLength: 32 });
 
 const CredentialSchema = Data.Enum([
@@ -134,3 +134,94 @@ export const Input = InputSchema as unknown as Input;
 const ReferenceInputsSchema = Data.Array(InputSchema);
 export type ReferenceInputs = Data.Static<typeof ReferenceInputsSchema>;
 export const ReferenceInputs = ReferenceInputsSchema as unknown as ReferenceInputs;
+
+const NeverSchema = Data.Nullable(Data.Integer()); // always instantiate to null
+
+const DelegateRepresentativeSchema = Data.Enum([
+    Data.Object({ Registered: CredentialSchema }),
+    Data.Object({ AlwaysAbstain: Data.Literal("AlwaysAbstain") }),
+    Data.Object({ AlwaysNoConfidence: Data.Literal("AlwaysNoConfidence") }),
+]);
+
+const DelegateVoteSchema = Data.Object({
+    delegate_representative: DelegateRepresentativeSchema,
+});
+const DelegateBothSchema = Data.Object({
+    stake_pool: StakePoolIdSchema,
+    delegate_representative: DelegateRepresentativeSchema
+});
+
+const DelegateBlockProductionSchema = Data.Object({
+    stake_pool: StakePoolIdSchema,
+});
+
+const DelegateSchema = Data.Enum([
+    Data.Object({ DelegateBlockProduction: DelegateBlockProductionSchema }),
+    Data.Object({ DelegateVote: DelegateVoteSchema }),
+    Data.Object({ DelegateBoth: DelegateBothSchema }),
+]);
+
+const RegisterCredentialSchema = Data.Object({
+    credential: CredentialSchema,
+    deposit: NeverSchema
+});
+const UnRegisterCredentialSchema = Data.Object({
+    credential: CredentialSchema,
+    refund: NeverSchema
+});
+const DelegateCredentialSchema = Data.Object({
+    credential: CredentialSchema,
+    delegate: DelegateSchema
+});
+
+const RegisterAndDelegateCredentialSchema = Data.Object({
+    credential: CredentialSchema,
+    delegate: DelegateSchema,
+    deposit: Data.Integer(),
+});
+const RegisterDelegateRepresentativeSchema = Data.Object({
+    delegate_representative: CredentialSchema,
+    deposit: Data.Integer(),
+});
+const UpdateDelegateRepresentativeSchema = Data.Object({
+    delegate_representative: CredentialSchema,
+});
+const UnregisterDelegateRepresentativeSchema = Data.Object({
+    delegate_representative: CredentialSchema,
+    refund: Data.Integer(),
+});
+const RegisterStakePoolSchema = Data.Object({
+    stake_pool: StakePoolIdSchema,
+    vrf: HashBlake2b224Schema
+});
+const RetireStakePoolSchema = Data.Object({
+    stake_pool: StakePoolIdSchema,
+    at_epoch: Data.Integer()
+});
+const AuthorizeConstitutionalCommitteeProxySchema = Data.Object({
+    constitutional_committee_member: CredentialSchema,
+    proxy: CredentialSchema,
+});
+const RetireFromConstitutionalCommitteeSchema = Data.Object({
+    constitutional_committee_member: CredentialSchema
+})
+
+const CertificateSchema = Data.Enum([
+    Data.Object({ RegisterCredential: RegisterCredentialSchema }),
+    Data.Object({ UnRegisterCredential: UnRegisterCredentialSchema }),
+    Data.Object({ DelegateCredential: DelegateCredentialSchema }),
+    Data.Object({ RegisterAndDelegateCredential: RegisterAndDelegateCredentialSchema }),
+    Data.Object({ RegisterDelegateRepresentative: RegisterDelegateRepresentativeSchema }),
+    Data.Object({ UpdateDelegateRepresentative: UpdateDelegateRepresentativeSchema }),
+    Data.Object({ UnregisterDelegateRepresentative: UnregisterDelegateRepresentativeSchema }),
+    Data.Object({ RegisterStakePool: RegisterStakePoolSchema }),
+    Data.Object({ RetireStakePool: RetireStakePoolSchema }),
+    Data.Object({ AuthorizeConstitutionalCommitteeProxy: AuthorizeConstitutionalCommitteeProxySchema }),
+    Data.Object({ RetireFromConstitutionalCommittee: RetireFromConstitutionalCommitteeSchema }),
+]);
+export type Certificate = Data.Static<typeof CertificateSchema>;
+export const Certificate = CertificateSchema as unknown as Certificate;
+
+const CertificatesSchema = Data.Array(CertificateSchema)
+export type Certificates = Data.Static<typeof CertificatesSchema>
+export const Certificates = CertificatesSchema as unknown as Certificates

@@ -2,16 +2,16 @@
   "body": {
     "inputs": [
       {
-        "transaction_id": "00232d4fc1e8b1bde3d486840da862c9ce75dcf2bec7febece5e1831f1f19641",
+        "transaction_id": "6b45af8ef6056d0c714fa0a04e8a8328caf778c6b53dc795f44f43cb1f6007ea",
         "index": 1
       }
     ],
     "outputs": [
       {
         "AlonzoFormatTxOut": {
-          "address": "addr_test1qqs7csfvtdxkz4srkadu96m9eel333dfvpghwqmuur6w398k90s5t6944ddaewke4nk5lqvryl90lplqlql4d64tuagsvmklw8",
+          "address": "addr_test1qq5g3r5zwe3gdt0s0qt8dn79es35depjcmv6ykxmxtkjc6rpt34h2qkmyh9d5x2j29pnqvul2zgr5alzgwza302cn9yq5ne7se",
           "amount": {
-            "coin": 189306316,
+            "coin": 697589297560,
             "multiasset": {
               "d441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcf": {
                 "4d79546f6b656e": 1
@@ -29,7 +29,7 @@
         "RegDrepCert": {
           "drep_credential": {
             "PubKey": {
-              "hash": "f62be145e8b5ab5bdcbad9aced4f818327caff87e0f83f56eaabe751"
+              "hash": "615c6b7502db25cada1952514330339f50903a77e24385d8bd589948"
             }
           },
           "deposit": 500000000,
@@ -53,7 +53,7 @@
     "total_collateral": null,
     "reference_inputs": [
       {
-        "transaction_id": "00232d4fc1e8b1bde3d486840da862c9ce75dcf2bec7febece5e1831f1f19641",
+        "transaction_id": "6b45af8ef6056d0c714fa0a04e8a8328caf778c6b53dc795f44f43cb1f6007ea",
         "index": 0
       }
     ],
