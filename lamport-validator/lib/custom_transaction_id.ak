@@ -1,6 +1,6 @@
 use cardano/transaction.{ValidityRange, Transaction, Input, OutputReference }
 use aiken/builtin
-use aiken/crypto.{Hash, Sha2_256, sha2_256}
+use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash}
 use cardano/assets.{Value, Lovelace}
 use cardano/governance.{Voter, GovernanceActionId, Vote}
 // use cardano/address.{Credential}
@@ -239,6 +239,13 @@ fn with_current_treasury_amount(self: CustomTransactionIdBuilder, current_treasu
   }
 }
 
+fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: List<VerificationKeyHash>) -> CustomTransactionIdBuilder {
+  CustomTransactionIdBuilder {
+    ..self,
+    extra_signatories: Some(builtin.serialise_data(extra_signatories))
+  }
+}
+
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
   let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
     expect Some(element) = b
@@ -250,6 +257,7 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.treasury_donation)
     |> attach(builder.current_treasury_amount)
     |> attach(builder.reference_inputs)
+    |> attach(builder.extra_signatories)
     // |> attach(builder.validity_range)
   // let blob = reference_inputs 
   //   // |> attach(builder.reference_inputs)
@@ -276,8 +284,8 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_treasury_donation(tx.treasury_donation)
                   |> with_current_treasury_amount(tx.current_treasury_amount)
                   |> with_reference_inputs(tx.reference_inputs)
+                  |> with_extra_signatories(tx.extra_signatories)
                      // |> with_validity_range(tx.validity_range)
-  //                 // |> with_extra_signatories(tx.extra_signatories)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
   //                 // |> with_votes(tx.votes)

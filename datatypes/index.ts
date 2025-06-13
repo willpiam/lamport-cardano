@@ -56,7 +56,7 @@ export type ValidityRange = Data.Static<typeof ValidityRangeSchema>;
 export const ValidityRange = ValidityRangeSchema as unknown as ValidityRange;
 
 
-const HashBlake2b224Schema = Data.Bytes({ minLength: 28, maxLength: 28 });
+export const HashBlake2b224Schema = Data.Bytes({ minLength: 28, maxLength: 28 });
 const HashBlake2b256Schema = Data.Bytes({ minLength: 32, maxLength: 32 });
 
 const CredentialSchema = Data.Enum([
@@ -66,6 +66,12 @@ const CredentialSchema = Data.Enum([
 
 export type Credential = Data.Static<typeof CredentialSchema>;
 export const Credential = CredentialSchema as unknown as Credential;
+
+
+
+const ListExtraSignatoriesSchema = Data.Array(HashBlake2b224Schema)
+export type ListExtraSignatories = Data.Static<typeof ListExtraSignatoriesSchema>
+export const ListExtraSignatories = ListExtraSignatoriesSchema as unknown as ListExtraSignatories
 
 const PointerSchema = Data.Object({
     slot_number: Data.Integer(),

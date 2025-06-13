@@ -15,7 +15,7 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList } from "./datatypes/index.ts";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 import { encode } from "node:punycode";
 
@@ -40,14 +40,15 @@ export class CustomTransactionIdBuilder {
 
     constructor() {}
 
-    public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution) {
+    public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = []) {
         const txObj = tx.toJSON() as any
-        
+      
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
+            .withExtraSignatories(additionalSigners)
             .build()
     }
 
@@ -164,6 +165,14 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    withExtraSignatories(additionalSigners: string[]) {
+        // console.log(witness_set)
+
+        const extra_signatories = Data.to(additionalSigners, ListExtraSignatories)
+        this.extra_signatories = fromHex(extra_signatories)
+        return this
+    }
+
 
     // todo: 'with' functions should build the blob
     //       build will just hash it 
@@ -173,6 +182,7 @@ export class CustomTransactionIdBuilder {
         assertExists(this.treasury_donation, "Treasury donation must be defined in the build step")
         assertExists(this.current_treasury_amount, "Current treasury amount must be defined in the build step")
         assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
+        assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
         // assertExists(this.validity_range, "Validity range must be defined")
 
         // const blob = new Uint8Array(this.mint.length + this.validity_range.length)
@@ -180,12 +190,14 @@ export class CustomTransactionIdBuilder {
             this.mint.length + 
             this.treasury_donation.length + 
             this.current_treasury_amount.length +
-            this.reference_inputs.length
+            this.reference_inputs.length + 
+            this.extra_signatories.length
         )
         blob.set(this.mint, 0)
         blob.set(this.treasury_donation, this.mint.length)
         blob.set(this.current_treasury_amount, this.mint.length + this.treasury_donation.length)
         blob.set(this.reference_inputs, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length)
+        blob.set(this.extra_signatories, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length)
         console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
         return await sha256(blob)
     }

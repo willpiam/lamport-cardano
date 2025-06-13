@@ -15,6 +15,7 @@ Anchor,
   paymentCredentialOf,
   scriptFromNative,
   SpendingValidator,
+  stakeCredentialOf,
   unixTimeToSlot,
   UTxO,
   validatorToAddress,
@@ -49,6 +50,10 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
     const stakeAddress = await lucid.wallet().rewardAddress()
     assertExists(stakeAddress)
 
+    const additionalSigners : string[] = [chuck.address].map(
+        address => stakeCredentialOf(address).hash
+    )
+
     const tx = await lucid.newTx()
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,
@@ -60,10 +65,10 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
         .validFrom(validFrom)
         .validTo(validTo)
         .register.DRep(stakeAddress)
-        .addSigner(chuck.address)
+        .addSignerKey(additionalSigners[0])
         .complete()
 
-    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid)
+    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid, additionalSigners)
     console.log(customTransactionId)
 });
 
