@@ -27,7 +27,7 @@ import { SpendAction } from "./mirror-types.ts";
 import { toHex } from "npm:@blaze-cardano/core";
 
 const alice = generateEmulatorAccount({
-  lovelace: 600_000_000n, // 500 + 100 ada
+  lovelace: 700_000_000n, // 500 + 100 ada
 });
 
 const emulator = new Emulator([alice]);
@@ -40,6 +40,9 @@ const simpleMintingPolicy = scriptFromNative({
 });
 const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 
+const stakeAddress = await lucid.wallet().rewardAddress()
+assertExists(stakeAddress)
+
 Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
     const validFrom = emulator.now();
     const validTo = validFrom + 900000;
@@ -47,8 +50,6 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
     const chuck = generateEmulatorAccount({});
     console.log('alice address ' + alice.address)
     console.log(alice)
-    const stakeAddress = await lucid.wallet().rewardAddress()
-    assertExists(stakeAddress)
 
     const additionalSigners : string[] = [chuck.address].map(
         address => stakeCredentialOf(address).hash
@@ -72,7 +73,7 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
     console.log(customTransactionId)
 });
 
-Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
+Deno.test.only("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
     // lock a utxo in the validator
     assert(blueprint.validators.map(v => v.title).includes("custom_transaction_id_minimal.custom_transaction_id_minimal.spend"), "custom_transaction_id_minimal validator not found");
     const rawValidator = blueprint.validators.find((v) => v.title === "custom_transaction_id_minimal.custom_transaction_id_minimal.spend")!.compiledCode;
@@ -138,12 +139,14 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         await lucid.awaitTx(txHash)
     });
 
+    console.log("STUB: created reference input")
     // find the reference input
     const referenceInput : UTxO = await (async () => {
         const utxos = await lucid.utxosAt(referenceInputHolder.address)
         assert(utxos.length === 1, "expected 1 utxo in the reference input holder")
         return utxos[0]
     })()
+    console.log("STUB: found reference input")
 
     const validFrom = emulator.now();
     const validTo = validFrom + 900000;
@@ -157,12 +160,15 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validFrom(validFrom)
         .validTo(validTo)
         .readFrom([referenceInput])
+        .register.DRep(stakeAddress)
         .complete();
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
     // save dummy tx to dummytx.json
     Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
+
+    console.log("STUB: saved dummy tx")
 
     const tx = await lucid.newTx()
         .collectFrom(await lucid.utxosAt(scriptAddress), SpendAction.VerifyFullSignature(message))
@@ -174,6 +180,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validFrom(validFrom)
         .validTo(validTo)
         .readFrom([referenceInput])
+        .register.DRep(stakeAddress)
         .complete()
     
     console.log("%cpassed complete ", "color: hotpink")

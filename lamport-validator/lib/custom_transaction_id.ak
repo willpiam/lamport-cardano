@@ -3,6 +3,7 @@ use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash}
 use cardano/assets.{Value, Lovelace}
 use cardano/governance.{Voter, GovernanceActionId, Vote}
+use cardano/certificate.{Certificate}
 // use cardano/address.{Credential}
 // use aiken/collection/dict.{Dict}
 use aiken/collection/list
@@ -89,8 +90,6 @@ fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: Lis
     })
     |> builtin.serialise_data()
   
-  trace @"reference inputs bytes " : reference_inputs_bytes
-
   CustomTransactionIdBuilder {
     ..self,
     reference_inputs: Some(reference_inputs_bytes),
@@ -240,6 +239,13 @@ fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: L
   }
 }
 
+fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certificate>) -> CustomTransactionIdBuilder {
+  CustomTransactionIdBuilder {
+    ..self,
+    certificates: Some(builtin.serialise_data(certificates))
+  }
+}
+
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
   let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
     expect Some(element) = b
@@ -252,12 +258,11 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.current_treasury_amount)
     |> attach(builder.reference_inputs)
     |> attach(builder.extra_signatories)
+    |> attach(builder.certificates)
     // |> attach(builder.validity_range)
   // let blob = reference_inputs 
-  //   // |> attach(builder.reference_inputs)
   //   // |> attach(builder.outputs)
   //   // |> attach(builder.fee)
-  //   // |> attach(builder.mint)
   //   // |> attach(builder.certificates)
   //   // |> attach(builder.withdrawals)
   //   // |> attach(builder.extra_signatories)
@@ -265,8 +270,6 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   // |> attach(builder.datums)
   //   // |> attach(builder.votes)
   //   // |> attach(builder.proposal_procedures)
-  //   // |> attach(builder.current_treasury_amount)
-  //   // |> attach(builder.treasury_donation)
   // trace @"blob": blob
   sha2_256(blob)
 }
@@ -279,6 +282,7 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_current_treasury_amount(tx.current_treasury_amount)
                   |> with_reference_inputs(tx.reference_inputs)
                   |> with_extra_signatories(tx.extra_signatories)
+                  |> with_certificates(tx.certificates)
                      // |> with_validity_range(tx.validity_range)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)

@@ -42,6 +42,7 @@ export class CustomTransactionIdBuilder {
 
     public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = []) {
         const txObj = tx.toJSON() as any
+        console.log(txObj)
       
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
@@ -49,6 +50,7 @@ export class CustomTransactionIdBuilder {
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
+            .withCertificates(txObj.body.certs ?? [])
             .build()
     }
 
@@ -166,13 +168,16 @@ export class CustomTransactionIdBuilder {
     }
 
     withExtraSignatories(additionalSigners: string[]) {
-        // console.log(witness_set)
-
         const extra_signatories = Data.to(additionalSigners, ListExtraSignatories)
         this.extra_signatories = fromHex(extra_signatories)
         return this
     }
 
+    withCertificates(certificates: any[]) {
+        console.log("Certificates: ", certificates)
+
+        return this
+    }
 
     // todo: 'with' functions should build the blob
     //       build will just hash it 
