@@ -2,16 +2,16 @@
   "body": {
     "inputs": [
       {
-        "transaction_id": "51e1e29a16dc529f4e455303d9156fa337fa9130aca2a4a87ae53d33e44a2e03",
+        "transaction_id": "051dcef56c111cbb0f4fbde943450d0e470d7dae1ad0a230cfc6aaace6d374f2",
         "index": 1
       }
     ],
     "outputs": [
       {
         "AlonzoFormatTxOut": {
-          "address": "addr_test1qzdu3g5plqvznufdfapyhe4z7t70s0pmnmyumme6t6lgtcljhtvkkpgm0vjxv87geyf0jgh74mee5g0gewgccdycv8fqy4dn8p",
+          "address": "addr_test1qqq90y8u6ajf5yhg3k8c97cnly2q7e9pvupm9jp7hrn7xuqzthk0u087zgh7wqjd3skg8f2vmefn3vn468ae28dcn7sqyc8qy0",
           "amount": {
-            "coin": 698086963522,
+            "coin": 698186957406,
             "multiasset": {
               "d441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcf": {
                 "4d79546f6b656e": 1
@@ -22,10 +22,12 @@
         }
       }
     ],
-    "fee": 171617,
+    "fee": 177733,
     "ttl": 1020,
     "certs": null,
-    "withdrawals": null,
+    "withdrawals": {
+      "stake_test1uqp9mm878nlpytl8qfxcctyr54xdu5eckf6ar7u4rkuflgqr6vx39": 100000000
+    },
     "auxiliary_data_hash": null,
     "validity_interval_start": 120,
     "mint": {
@@ -41,7 +43,7 @@
     "total_collateral": null,
     "reference_inputs": [
       {
-        "transaction_id": "51e1e29a16dc529f4e455303d9156fa337fa9130aca2a4a87ae53d33e44a2e03",
+        "transaction_id": "051dcef56c111cbb0f4fbde943450d0e470d7dae1ad0a230cfc6aaace6d374f2",
         "index": 0
       }
     ],

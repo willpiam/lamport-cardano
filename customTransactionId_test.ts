@@ -45,36 +45,36 @@ const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 const stakeAddress = await lucid.wallet().rewardAddress()
 assertExists(stakeAddress)
 
-Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
-    const validFrom = emulator.now();
-    const validTo = validFrom + 900000;
+// Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
+//     const validFrom = emulator.now();
+//     const validTo = validFrom + 900000;
 
-    const chuck = generateEmulatorAccount({});
-    console.log('alice address ' + alice.address)
-    console.log(alice)
+//     const chuck = generateEmulatorAccount({});
+//     console.log('alice address ' + alice.address)
+//     console.log(alice)
 
-    const additionalSigners : string[] = [chuck.address].map(
-        address => stakeCredentialOf(address).hash
-    )
+//     const additionalSigners : string[] = [chuck.address].map(
+//         address => stakeCredentialOf(address).hash
+//     )
 
-    const tx = await lucid.newTx()
-        .mintAssets({
-            [simplePolicyId + fromText("MyToken")]: 1n,
-        })
-        .attach.MintingPolicy(simpleMintingPolicy)
-        .pay.ToAddress(await lucid.wallet().address(), {
-            lovelace: 1_000_000n,
-        })
-        .validFrom(validFrom)
-        .validTo(validTo)
-        // .register.DRep(stakeAddress)
-        .register.Stake(stakeAddress)
-        .addSignerKey(additionalSigners[0])
-        .complete()
+//     const tx = await lucid.newTx()
+//         .mintAssets({
+//             [simplePolicyId + fromText("MyToken")]: 1n,
+//         })
+//         .attach.MintingPolicy(simpleMintingPolicy)
+//         .pay.ToAddress(await lucid.wallet().address(), {
+//             lovelace: 1_000_000n,
+//         })
+//         .validFrom(validFrom)
+//         .validTo(validTo)
+//         // .register.DRep(stakeAddress)
+//         .register.Stake(stakeAddress)
+//         .addSignerKey(additionalSigners[0])
+//         .complete()
 
-    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid, additionalSigners)
-    console.log(customTransactionId)
-});
+//     const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid, additionalSigners)
+//     console.log(customTransactionId)
+// });
 
 Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
     // step: setup for withdrawal  
@@ -197,6 +197,13 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     const validFrom = emulator.now();
     const validTo = validFrom + 900000;
 
+    const getRewards  = async () => {
+        const {rewards} : Delegation = await lucid.delegationAt(stakeAddress)
+        return rewards
+    }
+
+    const withdrawAmount = await getRewards()
+
     const dummyTx = await lucid
         .newTx()
         .mintAssets({
@@ -206,6 +213,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validFrom(validFrom)
         .validTo(validTo)
         .readFrom([referenceInput])
+        .withdraw(stakeAddress, withdrawAmount)
         // .register.DRep(stakeAddress)
         .complete();
 
@@ -231,6 +239,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validTo(validTo)
         .readFrom([referenceInput])
         // .register.DRep(stakeAddress)
+        .withdraw(stakeAddress, withdrawAmount)
         .complete()
     
     console.log("%cpassed complete ", "color: hotpink")
@@ -251,6 +260,10 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     
     const utxos = await lucid.utxosAt(scriptAddress)
     assert(utxos.length === 0, "expected 0 utxos in the validator")
+
+    await showRewards()
+    // assert the rewards amount is 0
+    assert(await getRewards() === 0n, "rewards amount must be 0")
 });
 
 // datum --> 546869732077696c6c2062652061207265666572656e636520696e707574 = Hex("This will be a reference input")

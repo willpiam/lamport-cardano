@@ -14,7 +14,7 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML} from "npm:@lucid-evolution/lucid@0.4.29";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails} from "npm:@lucid-evolution/lucid@0.4.29";
 import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 import { encode } from "node:punycode";
@@ -50,6 +50,7 @@ export class CustomTransactionIdBuilder {
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
+            .withWithdrawals(txObj.body.withdrawals ?? {})
             // .withCertificates(txObj.body.certs ?? [])
             .build()
     }
@@ -195,6 +196,25 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    withWithdrawals(withdrawals: any) {
+        console.log(`${'-'.repeat(100)}`)
+        console.log("Withdrawals: ", withdrawals)
+        const pairs : [string, bigint][] = Object.keys(withdrawals).map((stakeAddress : string) => {
+          const credential = getAddressDetails(stakeAddress).stakeCredential 
+          assertExists(credential, "Stake credential must exist")
+          return [credential.hash, BigInt(withdrawals[stakeAddress])]
+        })
+        console.log("Pairs: ", pairs)
+        const encodedPairs = pairs.map((pair : [string, bigint]) => {
+            return new Constr(0, [pair[0], pair[1]])
+        });
+        console.log("Encoded pairs: ", encodedPairs)
+        const encoded = Data.to(pairs)
+        console.log("Encoded withdrawals: ", encoded)
+        this.withdrawals = fromHex(encoded)
+        return this
+    }
+
     // todo: 'with' functions should build the blob
     //       build will just hash it 
     async build() : Promise<CustomTransactionId> {
@@ -204,6 +224,7 @@ export class CustomTransactionIdBuilder {
         assertExists(this.current_treasury_amount, "Current treasury amount must be defined in the build step")
         assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
         assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
+        assertExists(this.withdrawals, "Withdrawals must be defined in the build step")
         // assertExists(this.validity_range, "Validity range must be defined")
 
         // const blob = new Uint8Array(this.mint.length + this.validity_range.length)
@@ -212,13 +233,15 @@ export class CustomTransactionIdBuilder {
             this.treasury_donation.length + 
             this.current_treasury_amount.length +
             this.reference_inputs.length + 
-            this.extra_signatories.length
+            this.extra_signatories.length +
+            this.withdrawals.length
         )
         blob.set(this.mint, 0)
         blob.set(this.treasury_donation, this.mint.length)
         blob.set(this.current_treasury_amount, this.mint.length + this.treasury_donation.length)
         blob.set(this.reference_inputs, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length)
         blob.set(this.extra_signatories, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length)
+        blob.set(this.withdrawals, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length + this.extra_signatories.length)
         console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
         return await sha256(blob)
     }

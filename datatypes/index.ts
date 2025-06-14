@@ -225,3 +225,5 @@ export const Certificate = CertificateSchema as unknown as Certificate;
 const CertificatesSchema = Data.Array(CertificateSchema)
 export type Certificates = Data.Static<typeof CertificatesSchema>
 export const Certificates = CertificatesSchema as unknown as Certificates
+
+// const WithdrawalSchema = Data.
