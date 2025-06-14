@@ -199,18 +199,25 @@ export class CustomTransactionIdBuilder {
     withWithdrawals(withdrawals: any) {
         console.log(`${'-'.repeat(100)}`)
         console.log("Withdrawals: ", withdrawals)
-        const pairs : [string, bigint][] = Object.keys(withdrawals).map((stakeAddress : string) => {
+        const pairs = Object.keys(withdrawals).map((stakeAddress : string) => {
           const credential = getAddressDetails(stakeAddress).stakeCredential 
           assertExists(credential, "Stake credential must exist")
-          return [credential.hash, BigInt(withdrawals[stakeAddress])]
+        //   return [credential, BigInt(withdrawals[stakeAddress])]
+          return new Constr(0, [credential.hash, BigInt(withdrawals[stakeAddress])])
+        //   return [new Constr(0, [credential.hash]), BigInt(withdrawals[stakeAddress])]
         })
         console.log("Pairs: ", pairs)
-        const encodedPairs = pairs.map((pair : [string, bigint]) => {
-            return new Constr(0, [pair[0], pair[1]])
-        });
-        console.log("Encoded pairs: ", encodedPairs)
-        const encoded = Data.to(pairs)
+        const b = new Constr(0, pairs)
+        console.log("B: ", b)
+        const encoded = Data.to(b)
         console.log("Encoded withdrawals: ", encoded)
+        // const WithdrawalsScheme = Data.Array(Data.Tuple([Data.Bytes(), Data.Integer()]))
+        // const WithdrawalsScheme = Data.Array(Data.Tuple([Data.Object({hash: Data.Bytes()}), Data.Integer()]))
+        // type Withdrawals = Data.Static<typeof WithdrawalsScheme>
+        // const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
+
+        // const encoded = Data.to(pairs, Withdrawals)
+        // console.log("Encoded withdrawals: ", encoded)
         this.withdrawals = fromHex(encoded)
         return this
     }
@@ -242,7 +249,7 @@ export class CustomTransactionIdBuilder {
         blob.set(this.reference_inputs, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length)
         blob.set(this.extra_signatories, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length)
         blob.set(this.withdrawals, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length + this.extra_signatories.length)
-        console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
+        // console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
         return await sha256(blob)
     }
 }
