@@ -5,6 +5,7 @@ Anchor,
   applyParamsToScript,
   Constr,
   Data,
+  Delegation,
   Emulator,
   fromHex,
   fromText,
@@ -13,6 +14,7 @@ Anchor,
   Lucid,
   mintingPolicyToId,
   paymentCredentialOf,
+  PoolId,
   scriptFromNative,
   SpendingValidator,
   stakeCredentialOf,
@@ -75,6 +77,40 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
 });
 
 Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
+    // step: setup for withdrawal  
+    await t.step("register stake", async () => {
+        const tx = await lucid.newTx()
+            .register.Stake(stakeAddress)
+            .complete()
+
+        const signed = await tx.sign.withWallet().complete()
+        const txHash = await signed.submit()
+        await lucid.awaitTx(txHash)
+    });
+
+    // show current rewards amount
+    const showRewards = async () => {
+        const {rewards} : Delegation = await lucid.delegationAt(stakeAddress)
+        console.log(`%cCurrent rewards amount: ${rewards}`, "color: hotpink")
+    }
+    await showRewards()
+
+    await t.step("delegate to pool", async () => {
+        // get a valid pool id
+        const poolId : PoolId = "pool1eqj3dzpkcklc2r0v8pt8adrhrshq8m4zsev072ga7a52uj5wv5c"
+        const tx = await lucid.newTx()
+            .delegate.ToPool(stakeAddress, poolId)
+            .complete()
+
+        const signed = await tx.sign.withWallet().complete()
+        const txHash = await signed.submit()
+        await lucid.awaitTx(txHash)
+    });
+
+    await showRewards()
+    emulator.distributeRewards(100_000_000n)
+    await showRewards()
+
     // lock a utxo in the validator
     assert(blueprint.validators.map(v => v.title).includes("custom_transaction_id_minimal.custom_transaction_id_minimal.spend"), "custom_transaction_id_minimal validator not found");
     const rawValidator = blueprint.validators.find((v) => v.title === "custom_transaction_id_minimal.custom_transaction_id_minimal.spend")!.compiledCode;
