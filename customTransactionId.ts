@@ -50,7 +50,7 @@ export class CustomTransactionIdBuilder {
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
-            .withCertificates(txObj.body.certs ?? [])
+            // .withCertificates(txObj.body.certs ?? [])
             .build()
     }
 
@@ -175,6 +175,7 @@ export class CustomTransactionIdBuilder {
 
     withCertificates(certificates: any[]) {
         console.log("Certificates: ", certificates)
+        assertExists(certificates, "Certificates must be defined in the build step")
         const formated = certificates.map((cert: any) => {
             if (Object.keys(cert).includes("RegDrepCert")) {
                 return {
@@ -187,7 +188,7 @@ export class CustomTransactionIdBuilder {
                 }
             }
             return cert
-        })
+        }).filter((cert: any) => cert !== null)
         console.log("Formated: ", formated)
         const encoded = Data.to(formated, Certificates)
         this.certificates = fromHex(encoded)

@@ -65,7 +65,8 @@ Deno.test("Custom Transaction Id - build from a simple transaction", async (t) =
         })
         .validFrom(validFrom)
         .validTo(validTo)
-        .register.DRep(stakeAddress)
+        // .register.DRep(stakeAddress)
+        .register.Stake(stakeAddress)
         .addSignerKey(additionalSigners[0])
         .complete()
 
@@ -169,7 +170,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validFrom(validFrom)
         .validTo(validTo)
         .readFrom([referenceInput])
-        .register.DRep(stakeAddress)
+        // .register.DRep(stakeAddress)
         .complete();
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid)
@@ -193,7 +194,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validFrom(validFrom)
         .validTo(validTo)
         .readFrom([referenceInput])
-        .register.DRep(stakeAddress)
+        // .register.DRep(stakeAddress)
         .complete()
     
     console.log("%cpassed complete ", "color: hotpink")

@@ -258,7 +258,7 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.current_treasury_amount)
     |> attach(builder.reference_inputs)
     |> attach(builder.extra_signatories)
-    |> attach(builder.certificates)
+    // |> attach(builder.certificates)
     // |> attach(builder.validity_range)
   // let blob = reference_inputs 
   //   // |> attach(builder.outputs)
@@ -282,7 +282,7 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_current_treasury_amount(tx.current_treasury_amount)
                   |> with_reference_inputs(tx.reference_inputs)
                   |> with_extra_signatories(tx.extra_signatories)
-                  |> with_certificates(tx.certificates)
+                  // |> with_certificates(tx.certificates)
                      // |> with_validity_range(tx.validity_range)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
