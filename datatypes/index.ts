@@ -59,7 +59,7 @@ export const ValidityRange = ValidityRangeSchema as unknown as ValidityRange;
 
 const HashBlake2b256Schema = Data.Bytes({ minLength: 32, maxLength: 32 });
 
-const CredentialSchema = Data.Enum([
+export const CredentialSchema = Data.Enum([
     Data.Object({ VerificationKey: Data.Tuple([HashBlake2b224Schema]) }),
     Data.Object({ Script: Data.Tuple([HashBlake2b224Schema]) }),
 ]);

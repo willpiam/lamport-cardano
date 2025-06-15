@@ -6,7 +6,7 @@
 
 */
 
-import { fromHex, toHex } from "npm:@blaze-cardano/core";
+import { Credential, fromHex, toHex } from "npm:@blaze-cardano/core";
 import { sha256 } from "./sha256.ts";
 import {
   assertEquals,
@@ -15,7 +15,7 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates } from "./datatypes/index.ts";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema } from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 import { encode } from "node:punycode";
 
@@ -199,26 +199,38 @@ export class CustomTransactionIdBuilder {
     withWithdrawals(withdrawals: any) {
         console.log(`${'-'.repeat(100)}`)
         console.log("Withdrawals: ", withdrawals)
-        const pairs = Object.keys(withdrawals).map((stakeAddress : string) => {
-          const credential = getAddressDetails(stakeAddress).stakeCredential 
-          assertExists(credential, "Stake credential must exist")
-        //   return [credential, BigInt(withdrawals[stakeAddress])]
-          return new Constr(0, [credential.hash, BigInt(withdrawals[stakeAddress])])
-        //   return [new Constr(0, [credential.hash]), BigInt(withdrawals[stakeAddress])]
-        })
-        console.log("Pairs: ", pairs)
-        const b = new Constr(0, pairs)
-        console.log("B: ", b)
-        const encoded = Data.to(b)
+        const withdrawalsObj = Object.keys(withdrawals)
+            .reduce((acc, key) => {
+                const credential = getAddressDetails(key).stakeCredential 
+                assertExists(credential, "Stake credential must exist")
+                acc.set({VerificationKey: [credential.hash]}, BigInt(withdrawals[key]))
+                return acc
+            }, new Map<{VerificationKey: [string]}, bigint>())
+        console.log("Withdrawals object: ", withdrawalsObj)
+
+        const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
+        type Withdrawals = Data.Static<typeof WithdrawalsScheme>
+        const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
+
+        const encoded = Data.to(withdrawalsObj, Withdrawals, {canonical: true})
+        console.log("Encoded but with canonical not set: ", Data.to(withdrawalsObj, Withdrawals))
         console.log("Encoded withdrawals: ", encoded)
-        // const WithdrawalsScheme = Data.Array(Data.Tuple([Data.Bytes(), Data.Integer()]))
-        // const WithdrawalsScheme = Data.Array(Data.Tuple([Data.Object({hash: Data.Bytes()}), Data.Integer()]))
+        this.withdrawals = fromHex(encoded)
+        // const pairs = Object.keys(withdrawals).map((stakeAddress : string) => {
+        //   const credential = getAddressDetails(stakeAddress).stakeCredential 
+        //   assertExists(credential, "Stake credential must exist")
+        //   return [new Constr(0, [credential.hash]), BigInt(withdrawals[stakeAddress])]
+        // })
+        // console.log("Pairs: ", pairs)
+        // const b = new Constr(0, pairs)
+
+        // const WithdrawalsScheme = Data.Map(Data.Object({hash: Data.Bytes()}), Data.Integer())
         // type Withdrawals = Data.Static<typeof WithdrawalsScheme>
         // const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
 
-        // const encoded = Data.to(pairs, Withdrawals)
+        // const encoded = Data.to(b, Withdrawals)
         // console.log("Encoded withdrawals: ", encoded)
-        this.withdrawals = fromHex(encoded)
+        // this.withdrawals = fromHex(encoded)
         return this
     }
 
