@@ -206,10 +206,10 @@ export class CustomTransactionIdBuilder {
                 const a : {VerificationKey: [string]} = {VerificationKey: [credential.hash]}
                 const b = Data.to(a, Credential, {canonical: false})
                 const c = Data.from(b)
-                acc.set(c, BigInt(withdrawals[key]))
+                acc.set(a, BigInt(withdrawals[key]))
                 return acc
-            // }, new Map<{VerificationKey: [string]}, bigint>())
-            }, new Map<Data, bigint>())
+            }, new Map<{VerificationKey: [string]}, bigint>())
+            // }, new Map<Data, bigint>())
 
             // .reduce((acc, key) => {
             //     const credential = getAddressDetails(key).stakeCredential 
@@ -221,8 +221,7 @@ export class CustomTransactionIdBuilder {
             // }, new Map<string, bigint>())      
         console.log("Withdrawals object: ", withdrawalsObj)
 
-        // const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
-        const WithdrawalsScheme = Data.Map(Data.Any(), Data.Integer())
+        const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
         // const WithdrawalsScheme = Data.Map(Data.Any(), Data.Integer())
         type Withdrawals = Data.Static<typeof WithdrawalsScheme>
         const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
