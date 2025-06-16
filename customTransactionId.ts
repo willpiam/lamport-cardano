@@ -14,8 +14,8 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential } from "./datatypes/index.ts";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential} from "npm:@lucid-evolution/lucid@0.4.29";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType} from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 
 /*
@@ -56,7 +56,8 @@ export class CustomTransactionIdBuilder {
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
             // .withWithdrawals(txObj.body.withdrawals ?? {})
-            .withWithdrawals2(cmlTxBody)
+            // .withWithdrawals2(cmlTxBody)
+            .withWithdrawals3(txObj.body.withdrawals ?? {})
             // .withCertificates(txObj.body.certs ?? [])
             .build()
     }
@@ -202,51 +203,110 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
-    withWithdrawals(withdrawals: any) {
-        console.log(`${'-'.repeat(100)}`)
-        console.log("Withdrawals: ", withdrawals)
-        const withdrawalsObj = Object.keys(withdrawals)
-            .reduce((acc, key) => {
-                const credential = getAddressDetails(key).stakeCredential 
+    // withWithdrawals(withdrawals: any) {
+    //     console.log(`${'-'.repeat(100)}`)
+    //     console.log("Withdrawals: ", withdrawals)
+    //     const withdrawalsObj = Object.keys(withdrawals)
+    //         .reduce((acc, key) => {
+    //             const credential = getAddressDetails(key).stakeCredential 
+    //             assertExists(credential, "Stake credential must exist")
+    //             const a : {VerificationKey: [string]} = {VerificationKey: [credential.hash]}
+    //             const b : string = Data.to(a, Credential, {canonical: false})
+    //             // const c : Credential = Data.from(b, Credential)
+    //             const c : Data  = Data.from(b)
+    //             acc.set(c, BigInt(withdrawals[key]))
+    //             return acc
+    //         // }, new Map<{VerificationKey: [string]}, bigint>())
+    //         // }, new Map<Credential, bigint>())
+    //         }, new Map<Data, bigint>())
+    //     console.log("Withdrawals object: ", withdrawalsObj)
+
+    //     // const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
+    //     const WithdrawalsScheme = Data.Map(Data.Any(), Data.Integer())
+    //     type Withdrawals = Data.Static<typeof WithdrawalsScheme>
+    //     const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
+
+    //     const encoded = Data.to(withdrawalsObj, Withdrawals, {canonical: true})
+    //     console.log("Encoded withdrawals: ", encoded)
+    //     this.withdrawals = fromHex(encoded)
+    //     return this
+    // }
+
+    // withWithdrawals2(tx : CML.TransactionBody) {
+    //     // new approch using cml
+
+    //     // console.log(tx.withdrawals())
+    //     const withdrawals = tx.withdrawals()
+    //     const withdrawalKeys = withdrawals?.keys()
+    //     // assertExists(withdrawalKeys, "Withdrawal keys must exist")
+    //     const numberWithdrawals = withdrawalKeys?.len() ?? 0
+    //     console.log("Number of withdrawals: ", numberWithdrawals)
+
+    //     // const withdrawalsMap = new Map<PreparedCredential, bigint>()
+    //     const withdrawalsMap = new Map<Credential, bigint>()
+
+    //     for (let i = 0; i < numberWithdrawals; i++) {
+    //         const withdrawalKey : CML.RewardAddress | undefined = withdrawalKeys?.get(i)
+    //         assertExists(withdrawalKey, "Withdrawal key must exist")
+    //         const credential : CML.Credential = withdrawalKey.payment()
+
+    //         const a = credential.as_pub_key()!.to_hex(); // this exactly matches a substring found in the encoded withdrawals object
+    //         console.log("Credential value --------------> ", a);
+
+    //         const preparedCredential : Credential = {
+    //             // VerificationKey: [credential.as_pub_key()!.to_hex()]
+    //             VerificationKey: [a]
+    //         }
+
+    //         const amount : bigint = withdrawals?.get(withdrawalKey) ?? 0n
+    //         withdrawalsMap.set(preparedCredential, amount)
+    //     }
+    //     const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
+    //     type Withdrawals = Data.Static<typeof WithdrawalsScheme>
+    //     const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
+
+    //     const encoded = Data.to(withdrawalsMap, Withdrawals, {canonical: true})
+    //     console.log("Encoded withdrawals: ", encoded)
+
+    //     this.withdrawals = fromHex(encoded)
+    //     return this
+    // }
+
+    withWithdrawals3(withdrawals: any) {
+        // going to change how I do this on chain this time
+          const bytes = Object.keys(withdrawals)
+             .map((key: string) => {
+                const amount = BigInt(withdrawals[key])
+                console.log("Amount: ", amount)
+
+                const credential : Credential | undefined = getAddressDetails(key).stakeCredential 
+                console.log("Credential: ", credential)
                 assertExists(credential, "Stake credential must exist")
-                const a : {VerificationKey: [string]} = {VerificationKey: [credential.hash]}
-                const b : string = Data.to(a, Credential, {canonical: false})
-                // const c : Credential = Data.from(b, Credential)
-                const c : Data  = Data.from(b)
-                acc.set(c, BigInt(withdrawals[key]))
-                return acc
-            // }, new Map<{VerificationKey: [string]}, bigint>())
-            // }, new Map<Credential, bigint>())
-            }, new Map<Data, bigint>())
-        console.log("Withdrawals object: ", withdrawalsObj)
+                const credential_bytes = Data.to({
+                    VerificationKey: [credential.hash]
+                }, CredentialType)
+                console.log("Credential bytes: ", credential_bytes)
+                const amount_bytes = Data.to(amount)
 
-        // const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
-        const WithdrawalsScheme = Data.Map(Data.Any(), Data.Integer())
-        type Withdrawals = Data.Static<typeof WithdrawalsScheme>
-        const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
+                const entry = new Uint8Array(fromHex(credential_bytes).length + fromHex(amount_bytes).length)
+                entry.set(fromHex(credential_bytes), 0)
+                entry.set(fromHex(amount_bytes), fromHex(credential_bytes).length)
+                return entry
+             })
+             .reduce((acc, element) => {
+                const new_acc = new Uint8Array(acc.length + element.length)
+                new_acc.set(acc, 0)
+                new_acc.set(element, acc.length)
+                return new_acc
+             }, new Uint8Array())
+            // .reduce((acc, key) => {
+            //     const credential = getAddressDetails(key).stakeCredential 
+            //     assertExists(credential, "Stake credential must exist")
+            //     const a : {VerificationKey: [string]} = {VerificationKey: [credential.hash]}
+            //     const b : string = Data.to(a, Credential, {canonical: false})
 
-        const encoded = Data.to(withdrawalsObj, Withdrawals, {canonical: true})
-        console.log("Encoded withdrawals: ", encoded)
-        this.withdrawals = fromHex(encoded)
-        return this
-    }
-
-    withWithdrawals2(tx : CML.TransactionBody) {
-        // new approch using cml
-
-        // console.log(tx.withdrawals())
-        const withdrawals = tx.withdrawals()
-        const withdrawalKeys = withdrawals?.keys()
-        assertExists(withdrawalKeys, "Withdrawal keys must exist")
-        const numberWithdrawals = withdrawalKeys?.len() ?? 0
-        console.log("Number of withdrawals: ", numberWithdrawals)
-
-        for (let i = 0; i < numberWithdrawals; i++) {
-            const withdrawalKey = withdrawalKeys?.get(i)
-            assertExists(withdrawalKey, "Withdrawal key must exist")
-        }
-
-        this.withdrawals = fromHex("00")
+        // this.withdrawals = fromHex("00")
+        this.withdrawals = bytes
         return this
     }
 

@@ -45,36 +45,34 @@ const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 const stakeAddress = await lucid.wallet().rewardAddress()
 assertExists(stakeAddress)
 
-// Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
-//     const validFrom = emulator.now();
-//     const validTo = validFrom + 900000;
+Deno.test.ignore("Custom Transaction Id - build from a simple transaction", async (t) => {
+    const validFrom = emulator.now();
+    const validTo = validFrom + 900000;
 
-//     const chuck = generateEmulatorAccount({});
-//     console.log('alice address ' + alice.address)
-//     console.log(alice)
+    const chuck = generateEmulatorAccount({});
+    console.log('alice address ' + alice.address)
+    console.log(alice)
 
-//     const additionalSigners : string[] = [chuck.address].map(
-//         address => stakeCredentialOf(address).hash
-//     )
+    const additionalSigners : string[] = [chuck.address].map(
+        address => stakeCredentialOf(address).hash
+    )
 
-//     const tx = await lucid.newTx()
-//         .mintAssets({
-//             [simplePolicyId + fromText("MyToken")]: 1n,
-//         })
-//         .attach.MintingPolicy(simpleMintingPolicy)
-//         .pay.ToAddress(await lucid.wallet().address(), {
-//             lovelace: 1_000_000n,
-//         })
-//         .validFrom(validFrom)
-//         .validTo(validTo)
-//         // .register.DRep(stakeAddress)
-//         .register.Stake(stakeAddress)
-//         .addSignerKey(additionalSigners[0])
-//         .complete()
+    const tx = await lucid.newTx()
+        .mintAssets({
+            [simplePolicyId + fromText("MyToken")]: 1n,
+        })
+        .attach.MintingPolicy(simpleMintingPolicy)
+        .pay.ToAddress(await lucid.wallet().address(), {
+            lovelace: 1_000_000n,
+        })
+        .validFrom(validFrom)
+        .validTo(validTo)
+        .addSignerKey(additionalSigners[0])
+        .complete()
 
-//     const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid, additionalSigners)
-//     console.log(customTransactionId)
-// });
+    const customTransactionId = await CustomTransactionIdBuilder.customTransactionId(tx, lucid, additionalSigners)
+    console.log(customTransactionId)
+});
 
 Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", async (t) => {
     // step: setup for withdrawal  
@@ -221,7 +219,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
     // save dummy tx to dummytx.json
     Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
-
     console.log("STUB: saved dummy tx")
 
     const scriptUtxos = await lucid.utxosAt(scriptAddress)

@@ -246,8 +246,32 @@ fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certif
   }
 }
 
+// fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
+//   let bytes = builtin.serialise_data(withdrawals)
+//   trace @"withdrawals": bytes
+//   CustomTransactionIdBuilder {
+//     ..self,
+//     withdrawals: Some(bytes)
+//   }
+// }
+
+fn attach(a: ByteArray, b: Option<ByteArray>) -> ByteArray {
+  expect Some(element) = b
+  bytearray.concat(a, element)
+}
+
 fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
-  let bytes = builtin.serialise_data(withdrawals)
+  // let bytes = builtin.serialise_data(withdrawals)
+  let bytes = withdrawals 
+    |> list.map(fn (pair: Pair<Credential, Lovelace>) -> ByteArray {
+      let Pair(credential, lovelace) = pair
+      let credential_bytes = builtin.serialise_data(credential)
+      let lovelace_bytes = builtin.serialise_data(lovelace)
+      bytearray.concat(credential_bytes, lovelace_bytes)
+    }) 
+    |> list.reduce(#[], fn (acc, element) -> ByteArray {
+      bytearray.concat(acc, element)
+    })
   trace @"withdrawals": bytes
   CustomTransactionIdBuilder {
     ..self,
@@ -256,11 +280,6 @@ fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credent
 }
 
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
-  let attach = fn (a: ByteArray, b: Option<ByteArray>) -> ByteArray {
-    expect Some(element) = b
-    bytearray.concat(a, element)
-  }
-
   expect Some(mint) = builder.mint
   let blob = mint
     |> attach(builder.treasury_donation)
