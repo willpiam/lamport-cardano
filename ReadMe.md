@@ -2,6 +2,8 @@
 
 ## The Problem 
 
+It is desirable to support Lamport signatures on Cardano as a minimal quantum secure account solution. 
+
 The Cardano blockchain has a tight restiriction on the transaction size and number of computational steps taken per transaction which makes it infeasable to verify a lamport signature. [1] 
 
 There is an additional issue which is that the lampoert signature itself counts toward the transaction hash because it cannot be stored in the witness set and is instead placed inside the redeemer. I refer to this as *the circular-hash-dependency problem*. 
