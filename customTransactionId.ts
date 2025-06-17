@@ -55,8 +55,6 @@ export class CustomTransactionIdBuilder {
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
-            // .withWithdrawals(txObj.body.withdrawals ?? {})
-            // .withWithdrawals2(cmlTxBody)
             .withWithdrawals3(txObj.body.withdrawals ?? {})
             // .withCertificates(txObj.body.certs ?? [])
             .build()
@@ -203,75 +201,6 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
-    // withWithdrawals(withdrawals: any) {
-    //     console.log(`${'-'.repeat(100)}`)
-    //     console.log("Withdrawals: ", withdrawals)
-    //     const withdrawalsObj = Object.keys(withdrawals)
-    //         .reduce((acc, key) => {
-    //             const credential = getAddressDetails(key).stakeCredential 
-    //             assertExists(credential, "Stake credential must exist")
-    //             const a : {VerificationKey: [string]} = {VerificationKey: [credential.hash]}
-    //             const b : string = Data.to(a, Credential, {canonical: false})
-    //             // const c : Credential = Data.from(b, Credential)
-    //             const c : Data  = Data.from(b)
-    //             acc.set(c, BigInt(withdrawals[key]))
-    //             return acc
-    //         // }, new Map<{VerificationKey: [string]}, bigint>())
-    //         // }, new Map<Credential, bigint>())
-    //         }, new Map<Data, bigint>())
-    //     console.log("Withdrawals object: ", withdrawalsObj)
-
-    //     // const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
-    //     const WithdrawalsScheme = Data.Map(Data.Any(), Data.Integer())
-    //     type Withdrawals = Data.Static<typeof WithdrawalsScheme>
-    //     const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
-
-    //     const encoded = Data.to(withdrawalsObj, Withdrawals, {canonical: true})
-    //     console.log("Encoded withdrawals: ", encoded)
-    //     this.withdrawals = fromHex(encoded)
-    //     return this
-    // }
-
-    // withWithdrawals2(tx : CML.TransactionBody) {
-    //     // new approch using cml
-
-    //     // console.log(tx.withdrawals())
-    //     const withdrawals = tx.withdrawals()
-    //     const withdrawalKeys = withdrawals?.keys()
-    //     // assertExists(withdrawalKeys, "Withdrawal keys must exist")
-    //     const numberWithdrawals = withdrawalKeys?.len() ?? 0
-    //     console.log("Number of withdrawals: ", numberWithdrawals)
-
-    //     // const withdrawalsMap = new Map<PreparedCredential, bigint>()
-    //     const withdrawalsMap = new Map<Credential, bigint>()
-
-    //     for (let i = 0; i < numberWithdrawals; i++) {
-    //         const withdrawalKey : CML.RewardAddress | undefined = withdrawalKeys?.get(i)
-    //         assertExists(withdrawalKey, "Withdrawal key must exist")
-    //         const credential : CML.Credential = withdrawalKey.payment()
-
-    //         const a = credential.as_pub_key()!.to_hex(); // this exactly matches a substring found in the encoded withdrawals object
-    //         console.log("Credential value --------------> ", a);
-
-    //         const preparedCredential : Credential = {
-    //             // VerificationKey: [credential.as_pub_key()!.to_hex()]
-    //             VerificationKey: [a]
-    //         }
-
-    //         const amount : bigint = withdrawals?.get(withdrawalKey) ?? 0n
-    //         withdrawalsMap.set(preparedCredential, amount)
-    //     }
-    //     const WithdrawalsScheme = Data.Map(CredentialSchema, Data.Integer())
-    //     type Withdrawals = Data.Static<typeof WithdrawalsScheme>
-    //     const Withdrawals = WithdrawalsScheme as unknown as Withdrawals
-
-    //     const encoded = Data.to(withdrawalsMap, Withdrawals, {canonical: true})
-    //     console.log("Encoded withdrawals: ", encoded)
-
-    //     this.withdrawals = fromHex(encoded)
-    //     return this
-    // }
-
     withWithdrawals3(withdrawals: any) {
         // going to change how I do this on chain this time
           const bytes = Object.keys(withdrawals)
@@ -299,19 +228,10 @@ export class CustomTransactionIdBuilder {
                 new_acc.set(element, acc.length)
                 return new_acc
              }, new Uint8Array())
-            // .reduce((acc, key) => {
-            //     const credential = getAddressDetails(key).stakeCredential 
-            //     assertExists(credential, "Stake credential must exist")
-            //     const a : {VerificationKey: [string]} = {VerificationKey: [credential.hash]}
-            //     const b : string = Data.to(a, Credential, {canonical: false})
-
-        // this.withdrawals = fromHex("00")
         this.withdrawals = bytes
         return this
     }
 
-    // todo: 'with' functions should build the blob
-    //       build will just hash it 
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
         assertExists(this.mint, "Mint must be defined in the build step")
@@ -320,24 +240,23 @@ export class CustomTransactionIdBuilder {
         assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
         assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
         assertExists(this.withdrawals, "Withdrawals must be defined in the build step")
-        // assertExists(this.validity_range, "Validity range must be defined")
 
-        // const blob = new Uint8Array(this.mint.length + this.validity_range.length)
-        const blob = new Uint8Array(
-            this.mint.length + 
-            this.treasury_donation.length + 
-            this.current_treasury_amount.length +
-            this.reference_inputs.length + 
-            this.extra_signatories.length +
-            this.withdrawals.length
-        )
-        blob.set(this.mint, 0)
-        blob.set(this.treasury_donation, this.mint.length)
-        blob.set(this.current_treasury_amount, this.mint.length + this.treasury_donation.length)
-        blob.set(this.reference_inputs, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length)
-        blob.set(this.extra_signatories, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length)
-        blob.set(this.withdrawals, this.mint.length + this.treasury_donation.length + this.current_treasury_amount.length + this.reference_inputs.length + this.extra_signatories.length)
-        // console.log(`%cblob: ${toHex(blob)}`, "color: yellow")
+        const components : Uint8Array[] = [
+            this.mint, 
+            this.treasury_donation,
+            this.current_treasury_amount,
+            this.reference_inputs,
+            this.extra_signatories,
+            this.withdrawals,
+        ]
+
+        const combinedLengthUpTo = (n: number) => components.slice(0, n).reduce((acc : number, el: Uint8Array) => acc + el.length, 0 )
+        const fullLength = combinedLengthUpTo(components.length)
+        
+        const blob = new Uint8Array(fullLength)
+        for (let i = 0; i < components.length; i++) {
+            blob.set(components[i], i === 0 ? 0 : combinedLengthUpTo(i))
+        }
         return await sha256(blob)
     }
 }
