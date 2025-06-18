@@ -45,7 +45,7 @@ export class CustomTransactionIdBuilder {
 
     public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = []) {
         const txObj = tx.toJSON() as any
-        // console.log(txObj)
+        console.log(txObj)
 
         const cmlTxBody = tx.toTransaction().body()
       
@@ -55,7 +55,9 @@ export class CustomTransactionIdBuilder {
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
-            .withWithdrawals3(txObj.body.withdrawals ?? {})
+            .withWithdrawals(txObj.body.withdrawals ?? {})
+            // .withVotes(txObj.body.voting_procedures ?? [])
+            // .withInputs(txObj.body.inputs ?? [])
             // .withCertificates(txObj.body.certs ?? [])
             .build()
     }
@@ -94,6 +96,12 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    private encodeInputList(inputs: any[]){
+        const references = inputs.map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
+        const encoded : string = Data.to(references, OutputReferenceList)
+        return fromHex(encoded)
+    }
+
     /*
         withInputs
         @in list of objects with a transaction id (hex string) and an index
@@ -116,14 +124,14 @@ export class CustomTransactionIdBuilder {
     */
     withInputs(inputs: any[]) {
         // TODO: process inputs before adding them to the builder
-        this.inputs = new Uint8Array()
+        // this.inputs = new Uint8Array()
+        this.inputs = this.encodeInputList(inputs)
         return this
     }
 
+
     withReferenceInputs(reference_inputs: any[]) {
-        const references = reference_inputs.map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
-        const encoded : string = Data.to(references, OutputReferenceList)
-        this.reference_inputs = fromHex(encoded)
+        this.reference_inputs = this.encodeInputList(reference_inputs)
         return this
     }
    
@@ -201,7 +209,7 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
-    withWithdrawals3(withdrawals: any) {
+    withWithdrawals(withdrawals: any) {
         // going to change how I do this on chain this time
           const bytes = Object.keys(withdrawals)
              .map((key: string) => {
@@ -232,6 +240,12 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    withVotes(votes: any[]) {
+        console.log("Votes: ", votes)
+        this.votes = fromHex(Data.to(votes))
+        return this
+    }
+
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
         assertExists(this.mint, "Mint must be defined in the build step")
@@ -240,6 +254,8 @@ export class CustomTransactionIdBuilder {
         assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
         assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
         assertExists(this.withdrawals, "Withdrawals must be defined in the build step")
+        // assertExists(this.votes, "Votes must be defined in the build step")
+        // assertExists(this.inputs, "Inputs must be defined in the build step")
 
         const components : Uint8Array[] = [
             this.mint, 
@@ -248,6 +264,8 @@ export class CustomTransactionIdBuilder {
             this.reference_inputs,
             this.extra_signatories,
             this.withdrawals,
+            // this.votes,
+            // this.inputs,
         ]
 
         const combinedLengthUpTo = (n: number) => components.slice(0, n).reduce((acc : number, el: Uint8Array) => acc + el.length, 0 )

@@ -45,7 +45,7 @@ const simplePolicyId = mintingPolicyToId(simpleMintingPolicy);
 const stakeAddress = await lucid.wallet().rewardAddress()
 assertExists(stakeAddress)
 
-Deno.test.ignore("Custom Transaction Id - build from a simple transaction", async (t) => {
+Deno.test("Custom Transaction Id - build from a simple transaction", async (t) => {
     const validFrom = emulator.now();
     const validTo = validFrom + 900000;
 
@@ -249,7 +249,19 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     assert((tx.toJSON() as any).body.ttl === (dummyTx.toJSON() as any).body.ttl, "ttl must be the same on dummy and real transactions")
     assert((tx.toJSON() as any).body.validity_interval_start === (dummyTx.toJSON() as any).body.validity_interval_start, "validity interval start must be the same on dummy and real transactions")
     
-    // TODO: assert they have the same reference inputs
+    {
+        const dummyTxJson : any = dummyTx.toJSON()
+        const realTxJson  : any = tx.toJSON()
+
+        // first make the inputs the same because that may solve the problem causing the outputs to be different
+        assert(JSON.stringify(dummyTxJson.body.inputs) === JSON.stringify(realTxJson.body.inputs), "dummy and real tx must have identical inputs");
+        console.log("dummy inputs --> ", dummyTxJson.body.inputs)
+        console.log("real inputs  --> ", realTxJson.body.inputs)
+        assert(JSON.stringify(dummyTxJson.body.outputs) === JSON.stringify(realTxJson.body.outputs), "dummy and real tx must have identical outputs");
+        // console.log("dummy outputs --> ", JSON.stringify(dummyTxJson.body.outputs, null, 1))
+        // console.log("real outputs  --> ", JSON.stringify(realTxJson.body.outputs, null, 1))
+        assert(JSON.stringify(dummyTxJson.body.reference_inputs) === JSON.stringify(realTxJson.body.reference_inputs), "dummy and real tx must have identical reference inputs")
+    }
     
     const signed = await tx.sign.withWallet().complete()
     const txHash = await signed.submit()

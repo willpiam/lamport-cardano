@@ -34,6 +34,18 @@ use aiken/primitive/bytearray
 //   treasury_donation: Option<Lovelace>,
 // }
 
+// DONE
+// mint, donation, treasury amount, reference inputs, extra signatories, withdrawals
+// TODO:
+// certificates
+// votes
+// proposal procedures
+// HARD (WHY)
+// fee     (must calculate exact fee before hand )
+// inputs  (in lamport case cannot know exactly before signing))
+// outputs (cannot know exactly before signing simply because the output object will contain this transactions real hash/id)
+
+
 type CustomTransactionIdBuilder {
   inputs: Option<ByteArray>,
   reference_inputs: Option<ByteArray>,
@@ -74,22 +86,31 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
   }
 }
 
-// fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
-//   let inputs_bytes = builtin.serialise_data(inputs)
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     inputs: Some(inputs_bytes),
-//   }
-// }
 
-fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
-  // let reference_inputs_bytes = builtin.serialise_data(reference_inputs)
-  let reference_inputs_bytes = reference_inputs
+fn encode_input_list(inputs: List<Input>) -> ByteArray {
+  inputs
     |> list.map(fn (input: Input) -> OutputReference {
       input.output_reference
     })
     |> builtin.serialise_data()
-  
+}
+
+fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
+  let inputs_bytes = encode_input_list(inputs)
+  CustomTransactionIdBuilder {
+    ..self,
+    inputs: Some(inputs_bytes),
+  }
+}
+
+fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
+  // let reference_inputs_bytes = reference_inputs
+  //   |> list.map(fn (input: Input) -> OutputReference {
+  //     input.output_reference
+  //   })
+  //   |> builtin.serialise_data()
+  let reference_inputs_bytes = encode_input_list(reference_inputs)
+
   CustomTransactionIdBuilder {
     ..self,
     reference_inputs: Some(reference_inputs_bytes),
@@ -287,6 +308,8 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.reference_inputs)
     |> attach(builder.extra_signatories)
     |> attach(builder.withdrawals)
+    // |> attach(builder.votes)
+    // |> attach(builder.inputs)
     // |> attach(builder.certificates)
     // |> attach(builder.validity_range)
   // let blob = reference_inputs 
@@ -297,7 +320,6 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
   //   // |> attach(builder.extra_signatories)
   //   // |> attach(builder.redeemers)
   //   // |> attach(builder.datums)
-  //   // |> attach(builder.votes)
   //   // |> attach(builder.proposal_procedures)
   // trace @"blob": blob
   sha2_256(blob)
@@ -312,11 +334,12 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_reference_inputs(tx.reference_inputs)
                   |> with_extra_signatories(tx.extra_signatories)
                   |> with_withdrawals(tx.withdrawals)
+                  // |> with_votes(tx.votes)
+                  // |> with_inputs(tx.inputs)
                   // |> with_certificates(tx.certificates)
                      // |> with_validity_range(tx.validity_range)
   //                 // |> with_certificates(tx.certificates)
   //                 // |> with_withdrawals(tx.withdrawals)
-  //                 // |> with_votes(tx.votes)
   //                 // |> with_proposal_procedures(tx.proposal_procedures)
   //                 // |> with_reference_inputs(tx.reference_inputs)
   //                 // |> with_fee(tx.fee)
