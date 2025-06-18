@@ -97,6 +97,7 @@ fn encode_input_list(inputs: List<Input>) -> ByteArray {
 
 fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
   let inputs_bytes = encode_input_list(inputs)
+  trace @"input bytes ": inputs_bytes
   CustomTransactionIdBuilder {
     ..self,
     inputs: Some(inputs_bytes),
@@ -117,48 +118,12 @@ fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: Lis
   }
 }
 
-// fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
-//   let outputs_bytes = builtin.serialise_data(outputs)
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     outputs: Some(outputs_bytes),
-//   }
-// }
-
-// fn with_fee(self: CustomTransactionIdBuilder, fee: Lovelace) -> CustomTransactionIdBuilder {
-//   let fee_bytes = builtin.serialise_data(fee)
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     fee: Some(fee_bytes),
-//   }
-// }
-
 fn with_mint(self: CustomTransactionIdBuilder, mint: Value) -> CustomTransactionIdBuilder {
   CustomTransactionIdBuilder {
     ..self,
     mint: Some(builtin.serialise_data(mint)),
   }
 }
-
-// fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certificate>) -> CustomTransactionIdBuilder {
-//   let certificates_bytes = builtin.serialise_data(certificates)
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     certificates: Some(certificates_bytes)
-//   }
-// }
-
-// fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals : Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
-//   let withdrawals_bytes = builtin.serialise_data(withdrawals)
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     withdrawals: Some(withdrawals_bytes)
-//   }
-// }
 
 fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: ValidityRange) -> CustomTransactionIdBuilder {
   trace @"inside with_validity_range": validity_range
@@ -170,47 +135,6 @@ fn with_validity_range(self: CustomTransactionIdBuilder, validity_range: Validit
     validity_range: Some(validity_range_bytes)
   }
 }
-
-// fn with_extra_signatories(self: CustomTransactionIdBuilder, extra_signatories: List<VerificationKeyHash>) -> CustomTransactionIdBuilder {
-//   let extra_signatories_bytes = builtin.serialise_data(extra_signatories)
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     extra_signatories: Some(extra_signatories_bytes)
-//   }
-// }
-
-// fn with_redeemers(self: CustomTransactionIdBuilder, redeemers: Pairs<ScriptPurpose, Redeemer>) -> CustomTransactionIdBuilder {
-//   // find redeemers created with the VerifySignatureChunk and drop the signature chunk
-//   let sanitized_redeemers = redeemers 
-//     |> list.reduce(#[], fn (acc, redeemer_pair) -> ByteArray {
-//       // expect Pair(purpose, redeemer) = redeemer_pair
-//       let Pair(purpose, redeemer) = redeemer_pair
-//       let redeemer_bytes = if redeemer is SpendAction {
-//         when redeemer is {
-//           SpendAction.VerifySignatureChunk(_) | SpendAction.VerifyFullSignature(_) -> builtin.serialise_data(Pair(purpose, #[0]))
-//           _ -> builtin.serialise_data(redeemer_pair)
-//         }
-//       } else {
-//         builtin.serialise_data(redeemer_pair)
-//       }
-//       bytearray.concat(acc, redeemer_bytes)
-//     })
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     redeemers: Some(sanitized_redeemers)
-//   }
-// }
-
-// fn with_datums(self: CustomTransactionIdBuilder, datums: Dict<DataHash, Data>) -> CustomTransactionIdBuilder {
-//   let datums_bytes = builtin.serialise_data(datums)
-
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     datums: Some(datums_bytes)
-//   }
-// }
 
 fn with_votes(self: CustomTransactionIdBuilder, votes: Pairs<Voter, Pairs<GovernanceActionId, Vote>>) -> CustomTransactionIdBuilder {
   let votes_bytes = builtin.serialise_data(votes)
@@ -267,22 +191,12 @@ fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certif
   }
 }
 
-// fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
-//   let bytes = builtin.serialise_data(withdrawals)
-//   trace @"withdrawals": bytes
-//   CustomTransactionIdBuilder {
-//     ..self,
-//     withdrawals: Some(bytes)
-//   }
-// }
-
 fn attach(a: ByteArray, b: Option<ByteArray>) -> ByteArray {
   expect Some(element) = b
   bytearray.concat(a, element)
 }
 
 fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
-  // let bytes = builtin.serialise_data(withdrawals)
   let bytes = withdrawals 
     |> list.map(fn (pair: Pair<Credential, Lovelace>) -> ByteArray {
       let Pair(credential, lovelace) = pair
@@ -293,7 +207,6 @@ fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credent
     |> list.reduce(#[], fn (acc, element) -> ByteArray {
       bytearray.concat(acc, element)
     })
-  trace @"withdrawals": bytes
   CustomTransactionIdBuilder {
     ..self,
     withdrawals: Some(bytes)
@@ -308,25 +221,19 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.reference_inputs)
     |> attach(builder.extra_signatories)
     |> attach(builder.withdrawals)
+    |> attach(builder.inputs)
     // |> attach(builder.votes)
-    // |> attach(builder.inputs)
     // |> attach(builder.certificates)
     // |> attach(builder.validity_range)
-  // let blob = reference_inputs 
   //   // |> attach(builder.outputs)
   //   // |> attach(builder.fee)
-  //   // |> attach(builder.certificates)
-  //   // |> attach(builder.withdrawals)
-  //   // |> attach(builder.extra_signatories)
   //   // |> attach(builder.redeemers)
   //   // |> attach(builder.datums)
   //   // |> attach(builder.proposal_procedures)
-  // trace @"blob": blob
   sha2_256(blob)
 }
 
 pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
-  // trace @"inside custom_transaction_id"
   let builder = new_custom_transaction_id()
                   |> with_mint(tx.mint)
                   |> with_treasury_donation(tx.treasury_donation)
@@ -334,18 +241,15 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_reference_inputs(tx.reference_inputs)
                   |> with_extra_signatories(tx.extra_signatories)
                   |> with_withdrawals(tx.withdrawals)
+                  |> with_inputs(tx.inputs)
                   // |> with_votes(tx.votes)
-                  // |> with_inputs(tx.inputs)
                   // |> with_certificates(tx.certificates)
                      // |> with_validity_range(tx.validity_range)
   //                 // |> with_certificates(tx.certificates)
-  //                 // |> with_withdrawals(tx.withdrawals)
   //                 // |> with_proposal_procedures(tx.proposal_procedures)
-  //                 // |> with_reference_inputs(tx.reference_inputs)
   //                 // |> with_fee(tx.fee)
   //                 // |> with_datums(tx.datums)
   //                 // |> with_redeemers(tx.redeemers)
-  //                 // |> with_inputs(tx.inputs)
   //                 // |> with_outputs(tx.outputs)
   build_custom_transaction_id(builder)
 }

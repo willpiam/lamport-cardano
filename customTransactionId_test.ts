@@ -202,7 +202,17 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
     const withdrawAmount = await getRewards()
 
-    const dummyTx = await lucid
+    const scriptUtxos = await lucid.utxosAt(scriptAddress)
+    console.log(`${scriptUtxos.length} utxos in the validator`)
+    assert(scriptUtxos.length === 1, "expected 1 utxo in the validator")
+
+    // const walletUtxos = await lucid.utxosAt(await lucid.wallet().address())
+    // const config = lucid.config()
+    // console.log(`config ---> `, Object.keys(config))
+    // console.log(`txbuilderconfig ---> `, config.txbuilderconfig)
+
+    // const dummyTx = await lucid
+    const partialTx = lucid
         .newTx()
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,
@@ -213,19 +223,43 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .readFrom([referenceInput])
         .withdraw(stakeAddress, withdrawAmount)
         // .register.DRep(stakeAddress)
-        .complete();
+        // .complete();
 
-    const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid)
+    const dummyTx = await partialTx.complete()
+
+    const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid, [], scriptUtxos)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
     // save dummy tx to dummytx.json
     Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
     console.log("STUB: saved dummy tx")
 
-    const scriptUtxos = await lucid.utxosAt(scriptAddress)
-    console.log(`${scriptUtxos.length} utxos in the validator`)
-    assert(scriptUtxos.length === 1, "expected 1 utxo in the validator")
+
+    // const preselectedUtxos : UTxO[] = await Promise.all(
+    //     (dummyTx.toJSON() as any).body.inputs
+    //         .map(async (input: any) : Promise<UTxO> => {
+    //             await lucid.utxosByOutRef()
+    //             // return {
+    //             //     txHash: input.transaction_id,
+    //             //     outputIndex: input.index,
+    //             //     address: , 
+    //             //     assets: , 
+    //             //     datumHash: , 
+    //             //     datum: , 
+    //             //     scriptRef: ,
+    //             // }
+    //         }));
+    const preselectedUtxos = await lucid.utxosByOutRef(
+        (dummyTx.toJSON() as any).body.inputs
+            .map((input : {transaction_id: string, index: number}) => ({
+                txHash: input.transaction_id,
+                outputIndex: input.index,
+            })))
+    console.log(`STUB: have ${preselectedUtxos.length} preselected utxos`)
+    // console.log(`preselected utxos: `, preselectedUtxos)
+
 
     const tx = await lucid.newTx()
+        .collectFrom(preselectedUtxos)
         .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature(message))
         .attach.SpendingValidator(validator)
         .mintAssets({
@@ -238,6 +272,13 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         // .register.DRep(stakeAddress)
         .withdraw(stakeAddress, withdrawAmount)
         .complete()
+
+    // lucid.overrideUTxOs(walletUtxos)
+
+    // const tx = await partialTx
+    //     .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature(message))
+    //     .attach.SpendingValidator(validator)
+    //     .complete()
     
     console.log("%cpassed complete ", "color: hotpink")
 
@@ -253,10 +294,6 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         const dummyTxJson : any = dummyTx.toJSON()
         const realTxJson  : any = tx.toJSON()
 
-        // first make the inputs the same because that may solve the problem causing the outputs to be different
-        assert(JSON.stringify(dummyTxJson.body.inputs) === JSON.stringify(realTxJson.body.inputs), "dummy and real tx must have identical inputs");
-        console.log("dummy inputs --> ", dummyTxJson.body.inputs)
-        console.log("real inputs  --> ", realTxJson.body.inputs)
         assert(JSON.stringify(dummyTxJson.body.outputs) === JSON.stringify(realTxJson.body.outputs), "dummy and real tx must have identical outputs");
         // console.log("dummy outputs --> ", JSON.stringify(dummyTxJson.body.outputs, null, 1))
         // console.log("real outputs  --> ", JSON.stringify(realTxJson.body.outputs, null, 1))

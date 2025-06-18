@@ -14,7 +14,7 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential} from "npm:@lucid-evolution/lucid@0.4.29";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential, sortUTxOs} from "npm:@lucid-evolution/lucid@0.4.29";
 import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType} from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 
@@ -23,6 +23,8 @@ import { getInput } from "./utils.ts";
 */
 
 export type CustomTransactionId = Uint8Array
+
+
 
 export class CustomTransactionIdBuilder {
     private inputs: Uint8Array | undefined
@@ -43,12 +45,24 @@ export class CustomTransactionIdBuilder {
 
     constructor() {}
 
-    public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = []) {
+    public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = [], extraInputs : UTxO[] = []) {
         const txObj = tx.toJSON() as any
-        console.log(txObj)
+        // console.log(txObj)
 
         const cmlTxBody = tx.toTransaction().body()
-      
+
+        const utxosFromTx : UTxO[] = await lucid.utxosByOutRef(
+            txObj.body.inputs
+                .map((input : {transaction_id: string, index: number}) => ({
+                    txHash: input.transaction_id,
+                    outputIndex: input.index,
+                })))
+
+        // const extraInputRefs = extraInputs.map((utxo: UTxO) => ({
+        //     transaction_id: utxo.txHash,
+        //     index: utxo.outputIndex
+        // }))
+
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
@@ -57,7 +71,8 @@ export class CustomTransactionIdBuilder {
             .withExtraSignatories(additionalSigners)
             .withWithdrawals(txObj.body.withdrawals ?? {})
             // .withVotes(txObj.body.voting_procedures ?? [])
-            // .withInputs(txObj.body.inputs ?? [])
+            // .withInputs([...(txObj.body.inputs ?? []), ...extraInputRefs])
+            .withInputs([...utxosFromTx, ...extraInputs])
             // .withCertificates(txObj.body.certs ?? [])
             .build()
     }
@@ -96,8 +111,11 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
+    // TODO: remove if only used once
     private encodeInputList(inputs: any[]){
+        // const sorted = sortUTxOs(); 
         const references = inputs.map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
+        // const references = sorted.map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
         const encoded : string = Data.to(references, OutputReferenceList)
         return fromHex(encoded)
     }
@@ -122,10 +140,17 @@ export class CustomTransactionIdBuilder {
 
         This function is the off-chain mirror of the `with_inputs` function in the `custom_transaction_id.ak` file
     */
-    withInputs(inputs: any[]) {
-        // TODO: process inputs before adding them to the builder
-        // this.inputs = new Uint8Array()
-        this.inputs = this.encodeInputList(inputs)
+    withInputs(inputs: UTxO[]) {
+        console.log(`withInputs --> `, inputs)
+        const sorted = sortUTxOs(inputs, "Canonical")
+            .map((input : UTxO) => ({
+                transaction_id: input.txHash,
+                output_index: BigInt(input.outputIndex)
+            }))
+        
+        const encoded : string = Data.to(sorted, OutputReferenceList)
+        console.log(`Input bytes are ${encoded}`)
+        this.inputs = fromHex(encoded)
         return this
     }
 
@@ -255,7 +280,7 @@ export class CustomTransactionIdBuilder {
         assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
         assertExists(this.withdrawals, "Withdrawals must be defined in the build step")
         // assertExists(this.votes, "Votes must be defined in the build step")
-        // assertExists(this.inputs, "Inputs must be defined in the build step")
+        assertExists(this.inputs, "Inputs must be defined in the build step")
 
         const components : Uint8Array[] = [
             this.mint, 
@@ -265,7 +290,7 @@ export class CustomTransactionIdBuilder {
             this.extra_signatories,
             this.withdrawals,
             // this.votes,
-            // this.inputs,
+            this.inputs,
         ]
 
         const combinedLengthUpTo = (n: number) => components.slice(0, n).reduce((acc : number, el: Uint8Array) => acc + el.length, 0 )
