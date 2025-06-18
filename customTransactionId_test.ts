@@ -15,6 +15,7 @@ Anchor,
   mintingPolicyToId,
   paymentCredentialOf,
   PoolId,
+  Script,
   scriptFromNative,
   SpendingValidator,
   stakeCredentialOf,
@@ -211,8 +212,8 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // console.log(`config ---> `, Object.keys(config))
     // console.log(`txbuilderconfig ---> `, config.txbuilderconfig)
 
-    // const dummyTx = await lucid
-    const partialTx = lucid
+    const dummyTx = await lucid
+    // const partialTx = lucid
         .newTx()
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,
@@ -222,17 +223,20 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validTo(validTo)
         .readFrom([referenceInput])
         .withdraw(stakeAddress, withdrawAmount)
+        .pay.ToAddressWithData(scriptAddress, {
+            kind: "inline",
+            value: Data.to(fromText("this is a test")),
+        }, {lovelace: 10_000_000n}, validator )
         // .register.DRep(stakeAddress)
-        // .complete();
+        .complete();
 
-    const dummyTx = await partialTx.complete()
+    // const dummyTx = await partialTx.complete()
 
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid, [], scriptUtxos)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
     // save dummy tx to dummytx.json
     Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
     console.log("STUB: saved dummy tx")
-
 
     // const preselectedUtxos : UTxO[] = await Promise.all(
     //     (dummyTx.toJSON() as any).body.inputs

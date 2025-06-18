@@ -1,4 +1,4 @@
-use cardano/transaction.{ValidityRange, Transaction, Input, OutputReference }
+use cardano/transaction.{ValidityRange, Transaction, Input, OutputReference, Output }
 use aiken/builtin
 use aiken/crypto.{Hash, Sha2_256, sha2_256, VerificationKeyHash}
 use cardano/assets.{Value, Lovelace}
@@ -97,7 +97,6 @@ fn encode_input_list(inputs: List<Input>) -> ByteArray {
 
 fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
   let inputs_bytes = encode_input_list(inputs)
-  trace @"input bytes ": inputs_bytes
   CustomTransactionIdBuilder {
     ..self,
     inputs: Some(inputs_bytes),
@@ -191,6 +190,13 @@ fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certif
   }
 }
 
+fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
+  CustomTransactionIdBuilder {
+    ..self,
+    outputs: Some(builtin.serialise_data(outputs))
+  }
+}
+
 fn attach(a: ByteArray, b: Option<ByteArray>) -> ByteArray {
   expect Some(element) = b
   bytearray.concat(a, element)
@@ -222,10 +228,10 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.extra_signatories)
     |> attach(builder.withdrawals)
     |> attach(builder.inputs)
+    |> attach(builder.outputs)
     // |> attach(builder.votes)
     // |> attach(builder.certificates)
     // |> attach(builder.validity_range)
-  //   // |> attach(builder.outputs)
   //   // |> attach(builder.fee)
   //   // |> attach(builder.redeemers)
   //   // |> attach(builder.datums)
@@ -242,6 +248,7 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_extra_signatories(tx.extra_signatories)
                   |> with_withdrawals(tx.withdrawals)
                   |> with_inputs(tx.inputs)
+                  |> with_outputs(tx.outputs)
                   // |> with_votes(tx.votes)
                   // |> with_certificates(tx.certificates)
                      // |> with_validity_range(tx.validity_range)
@@ -250,7 +257,6 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
   //                 // |> with_fee(tx.fee)
   //                 // |> with_datums(tx.datums)
   //                 // |> with_redeemers(tx.redeemers)
-  //                 // |> with_outputs(tx.outputs)
   build_custom_transaction_id(builder)
 }
 

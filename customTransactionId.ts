@@ -45,9 +45,17 @@ export class CustomTransactionIdBuilder {
 
     constructor() {}
 
+    /*
+        parameters:
+        tx
+        lucid
+        additionalSigners
+        extraInputs --> use to inject inputs missing from your draft tx
+    */
     public static async customTransactionId(tx: TxSignBuilder, lucid: LucidEvolution, additionalSigners: string[] = [], extraInputs : UTxO[] = []) {
         const txObj = tx.toJSON() as any
         // console.log(txObj)
+        // console.log(`json tx outputs --> `, txObj.body.outputs)
 
         const cmlTxBody = tx.toTransaction().body()
 
@@ -58,11 +66,6 @@ export class CustomTransactionIdBuilder {
                     outputIndex: input.index,
                 })))
 
-        // const extraInputRefs = extraInputs.map((utxo: UTxO) => ({
-        //     transaction_id: utxo.txHash,
-        //     index: utxo.outputIndex
-        // }))
-
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
@@ -70,9 +73,10 @@ export class CustomTransactionIdBuilder {
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
             .withWithdrawals(txObj.body.withdrawals ?? {})
+            .withInputs([...utxosFromTx, ...extraInputs])
+            .withOutputs(txObj.body.outputs)
             // .withVotes(txObj.body.voting_procedures ?? [])
             // .withInputs([...(txObj.body.inputs ?? []), ...extraInputRefs])
-            .withInputs([...utxosFromTx, ...extraInputs])
             // .withCertificates(txObj.body.certs ?? [])
             .build()
     }
@@ -154,13 +158,80 @@ export class CustomTransactionIdBuilder {
         return this
     }
 
-
+    // rework to use UTxOs
     withReferenceInputs(reference_inputs: any[]) {
         this.reference_inputs = this.encodeInputList(reference_inputs)
         return this
     }
-   
+  
+    /*
+        Aiken definition of output
+        Output {
+            address: Address,
+            value: Value,
+            datum: Datum,
+            reference_script: Option<ScriptHash>,
+        }
+    */
     withOutputs(outputs: any[]) {
+        // console.log(`Outputs --> `, outputs)
+        const formated : any[] = outputs.map((output: any) => {
+            assert(1 === Object.keys(output).length, "Should only be one key on outputs root object")
+            const a = output[Object.keys(output)[0]];
+            console.log("a is ", a)
+
+            const addressDetails = getAddressDetails(a.address)
+            console.log(addressDetails)
+            const processCredential = (credential: any ) => {
+                if ("Key" === credential.type){
+                    return {
+                        VerificationKey: credential.hash
+                    }
+                }
+                return {
+                    Script: credential.hash 
+                }
+            }
+            const address = {
+                payment_credential: processCredential(addressDetails.paymentCredential),
+                stake_credential: addressDetails.stakeCredential ? processCredential(addressDetails.stakeCredential) : undefined
+            }
+
+            console.log(`STUB:withOutputs::outputs.map have address`)
+
+            const value : Map<string, Map<string, bigint>> = new Map<string, Map<string, bigint>>();
+
+            // add lovelace
+            const lovelace= new Map<string, bigint>()
+            lovelace.set("", a.amount.coin)
+            value.set("", lovelace)
+
+            console.log("STUB: have set lovelace in value")
+
+            // add everything else
+            for (const policyId of Object.keys(a.amount.multiasset)) {
+                console.log(policyId)
+                const assets = new Map<string, bigint>();
+                const tokens : any = a.amount.multiasset[policyId];
+                for (const assetName of Object.keys(tokens)) {
+                    assets.set(assetName, BigInt(tokens[assetName]));
+                }
+
+                value.set(policyId, assets);
+            }
+
+            console.log("STUB:withOutputs --> have value")
+
+            // add datum
+            
+            return {
+                address, 
+                value,
+
+            }
+            return null
+            
+        })
         // TODO: process outputs before adding them to the builder
         this.outputs = new Uint8Array()
         return this
