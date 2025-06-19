@@ -276,7 +276,7 @@ export class CustomTransactionIdBuilder {
                 address, 
                 value,
                 // datum,
-                datum: {NoDatum: "NoDatum" as "NoDatum"},
+                datum: { NoDatum: "NoDatum" as "NoDatum" },
                 // reference_script,
                 reference_script: null
             }

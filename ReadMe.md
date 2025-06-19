@@ -131,6 +131,34 @@ A class derived from the Lamport class (defined in Lamport.ts) with added functi
 
 it may be very smart to try to reduce the number of "steps" as this would allow you to do this in less transaction. So what is the optimal number of chunks to split the system into? Well for every chunk removed you save 2 transactions (initializing the token with the public key + verifying part of a signature against that public key). Its important to note that this implementation always expects the checking of the full signature in a seperate step. This means that in that last transaction you don't have the overhead of actually checking a lamoprt key. Its probably worth trying to reduce the number of chunks to just enough that transactions always suceed.
 
+## Annoying CBOR situation
+
+
+In many cases I've run into a situation where the off-chain CBOR of a serilized object is *almost* exactly the same as the on-chain CBOR. It's not a matter of specifying *canonical* in `Data.to()`, at least not at the top level. The issue usually occures when serilizing nested objects. 
+
+It seems the top level object is being serialized the same way on-chain and off-chain but the child objects are not. 
+
+For the sake of speed, and because this is only a demonstration, I've decided in many cases to simply change the way I do the encoding on-chain. 
+
+### Example
+
+**Outputs**
+
+On-chain
+
+`9FD8799FD8799FD8799F581C18FF00F7B933F00E9DCB65AE9ACB15D467398374A33C7CB2202788ADFFD8799FD8799FD8799F581C600624E8DA60D595CB25A825E32D6389181E05747B256415BB76625DFFFFFFFFA140A1401A00989680D87980D87A80FFD8799FD8799FD8799F581C16A5765CDA6CC3E6810BCF97010564489B6AC3CE3DDD0AB19849E51FFFD8799FD8799FD8799F581C90F8535C267168DDBA219B5B01318F4AB7B6667885BA9A2DB43947E0FFFFFFFFA240A1401B000000A28EE1392A581CD441227553A0F1A965FEE7D60A0F724B368DD1BDDBC208730FCCEBCFA1474D79546F6B656E01D87980D87A80FFFF`
+
+Off-chain
+
+`9fd8799fd8799fd8799f581c18ff00f7b933f00e9dcb65ae9acb15d467398374a33c7cb2202788adffd8799fd8799fd8799f581c600624e8da60d595cb25a825e32d6389181e05747b256415bb76625dffffffffbf40bf401a00989680ffffd87980d87a80ffd8799fd8799fd8799f581c16a5765cda6cc3e6810bcf97010564489b6ac3ce3ddd0ab19849e51fffd8799fd8799fd8799f581c90f8535c267168ddba219b5b01318f4ab7b6667885ba9a2db43947e0ffffffffbf40bf401b000000a28e96e0b2ff581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfbf474d79546f6b656e01ffffd87980d87a80ffff`
+
+### Tools
+
+[hex diff](https://williamdoyle.ca/tools/hexCompare.html)
+[cbor](https://cbor.me/)
+[hex<->text](https://williamdoyle.ca/tools/textandhex.html)
+[Cardano decoder](https://cardanoscan.io/datumInspector)
+
 ## Questions
 
 ### Making an account
