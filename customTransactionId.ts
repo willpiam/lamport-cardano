@@ -14,7 +14,7 @@ import {
   assertRejects,
   assert,
 } from "@std/assert";
-import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential, sortUTxOs} from "npm:@lucid-evolution/lucid@0.4.29";
+import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential, sortUTxOs, validatorToScriptHash, Validator, ScriptType} from "npm:@lucid-evolution/lucid@0.4.29";
 import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType} from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 
@@ -202,7 +202,7 @@ export class CustomTransactionIdBuilder {
             const value : Map<string, Map<string, bigint>> = new Map<string, Map<string, bigint>>();
 
             // add lovelace
-            const lovelace= new Map<string, bigint>()
+            const lovelace = new Map<string, bigint>()
             lovelace.set("", a.amount.coin)
             value.set("", lovelace)
 
@@ -210,7 +210,7 @@ export class CustomTransactionIdBuilder {
 
             // add everything else
             for (const policyId of Object.keys(a.amount.multiasset)) {
-                console.log(policyId)
+                console.log(`%c policy id of assets is ${policyId}`, "color: red")
                 const assets = new Map<string, bigint>();
                 const tokens : any = a.amount.multiasset[policyId];
                 for (const assetName of Object.keys(tokens)) {
@@ -222,17 +222,41 @@ export class CustomTransactionIdBuilder {
 
             console.log("STUB:withOutputs --> have value")
 
-            // add datum
-            
+            // add datum (convert to one of three constructors)
+            // start with InlineDatum because its all I ever use
+            // const datum = a.datum_option
+            const datum = a.datum_option ? {InlineDatum: a.datum_option.Datum.datum.bytes} : null
+
+            // add reference script
+            // get script hash / id
+            const reference_script = (() => {
+                if ([undefined, null].includes(a?.script_reference)) {
+                    return null;
+                }
+                const key = Object.keys(a?.script_reference)[0]
+                const script = a?.script_reference[key].script
+                const validator : Validator = {
+                    type: key as ScriptType,
+                    script
+                }
+                const reference_script = a?.script_reference ?? null
+                console.log("reference script ", reference_script)
+                const reference_script_hash = validatorToScriptHash(validator)
+                console.log("reference script hash ", reference_script_hash)
+                return reference_script_hash
+            })()
+
             return {
                 address, 
                 value,
-
+                datum,
+                reference_script
             }
-            return null
-            
         })
+
         // TODO: process outputs before adding them to the builder
+        Deno.writeTextFileSync("outputs.json", JSON.stringify(formated, null, 2))
+        console.log("STUB: saved dummy tx")
         this.outputs = new Uint8Array()
         return this
     }

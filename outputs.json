@@ -1,0 +1,30 @@
+[
+  {
+    "address": {
+      "payment_credential": {
+        "Script": "88ce6373aa732bff075a55f935a2dae9c4a71acdba40fead3b3276e0"
+      },
+      "stake_credential": {
+        "VerificationKey": "cc8e9619ec84fde6c8e36ae82828c3f558230f29e78f12211d4b4bed"
+      }
+    },
+    "value": {},
+    "datum": {
+      "InlineDatum": "7468697320697320612074657374"
+    },
+    "reference_script": "88ce6373aa732bff075a55f935a2dae9c4a71acdba40fead3b3276e0"
+  },
+  {
+    "address": {
+      "payment_credential": {
+        "VerificationKey": "9c74a40862897b817e82b6fecf2b52e2e27a39e17b88a54a47b9da94"
+      },
+      "stake_credential": {
+        "VerificationKey": "cc8e9619ec84fde6c8e36ae82828c3f558230f29e78f12211d4b4bed"
+      }
+    },
+    "value": {},
+    "datum": null,
+    "reference_script": null
+  }
+]
