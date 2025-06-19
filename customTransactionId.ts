@@ -15,7 +15,7 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential, sortUTxOs, validatorToScriptHash, Validator, ScriptType} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType} from "./datatypes/index.ts";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType, Output} from "./datatypes/index.ts";
 import { getInput } from "./utils.ts";
 
 /*
@@ -145,7 +145,7 @@ export class CustomTransactionIdBuilder {
         This function is the off-chain mirror of the `with_inputs` function in the `custom_transaction_id.ak` file
     */
     withInputs(inputs: UTxO[]) {
-        console.log(`withInputs --> `, inputs)
+        // console.log(`withInputs --> `, inputs)
         const sorted = sortUTxOs(inputs, "Canonical")
             .map((input : UTxO) => ({
                 transaction_id: input.txHash,
@@ -153,7 +153,7 @@ export class CustomTransactionIdBuilder {
             }))
         
         const encoded : string = Data.to(sorted, OutputReferenceList)
-        console.log(`Input bytes are ${encoded}`)
+        // console.log(`Input bytes are ${encoded}`)
         this.inputs = fromHex(encoded)
         return this
     }
@@ -210,22 +210,28 @@ export class CustomTransactionIdBuilder {
 
             // add everything else
             for (const policyId of Object.keys(a.amount.multiasset)) {
-                console.log(`%c policy id of assets is ${policyId}`, "color: red")
+                console.log(`%cpolicy id of assets is ${policyId}`, "color: red")
                 const assets = new Map<string, bigint>();
                 const tokens : any = a.amount.multiasset[policyId];
                 for (const assetName of Object.keys(tokens)) {
+                    console.log(`%cAsset name is ${assetName}`, "color: blue")
                     assets.set(assetName, BigInt(tokens[assetName]));
                 }
+
+                console.log("assets --> ", assets)
+                console.log("assets --> ", JSON.stringify(assets, null, 2))
 
                 value.set(policyId, assets);
             }
 
             console.log("STUB:withOutputs --> have value")
+            console.log(value)
+            console.log(JSON.stringify(value, null, 2))
 
             // add datum (convert to one of three constructors)
             // start with InlineDatum because its all I ever use
             // const datum = a.datum_option
-            const datum = a.datum_option ? {InlineDatum: a.datum_option.Datum.datum.bytes} : null
+            const datum = a.datum_option ? {InlineDatum: a.datum_option.Datum.datum.bytes} : {NoDatum: "NoDatum"}
 
             // add reference script
             // get script hash / id
@@ -246,12 +252,17 @@ export class CustomTransactionIdBuilder {
                 return reference_script_hash
             })()
 
-            return {
+            const wholeOutput = {
                 address, 
                 value,
-                datum,
-                reference_script
+                // datum,
+                datum: {NoDatum: "NoDatum"},
+                reference_script,
             }
+
+            const encodedOutput = Data.to<Output>(wholeOutput, Output)
+
+            return encodedOutput
         })
 
         // TODO: process outputs before adding them to the builder
