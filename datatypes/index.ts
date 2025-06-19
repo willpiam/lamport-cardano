@@ -121,7 +121,11 @@ const OutputSchema = Data.Object({
     reference_script: Data.Nullable(HashBlake2b224Schema)
 });
 export type Output = Data.Static<typeof OutputSchema>;
-export const Output = OutputSchema as unknown as OutputReference;
+export const Output = OutputSchema as unknown as Output;
+
+const OutputListSchema = Data.Array(OutputSchema)
+export type OutputList = Data.Static<typeof OutputListSchema>
+export const OutputList = OutputListSchema as unknown as OutputList
 
 export const InputSchema = Data.Object({
   output_reference: OutputReferenceSchema,

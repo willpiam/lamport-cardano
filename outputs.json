@@ -1,30 +1,4 @@
 [
-  {
-    "address": {
-      "payment_credential": {
-        "Script": "88ce6373aa732bff075a55f935a2dae9c4a71acdba40fead3b3276e0"
-      },
-      "stake_credential": {
-        "VerificationKey": "e22825c4a3b4762061863efedf7f26ef610f682c5f6eab0d929f2f1f"
-      }
-    },
-    "value": {},
-    "datum": {
-      "InlineDatum": "7468697320697320612074657374"
-    },
-    "reference_script": "88ce6373aa732bff075a55f935a2dae9c4a71acdba40fead3b3276e0"
-  },
-  {
-    "address": {
-      "payment_credential": {
-        "VerificationKey": "11c768a9de5d4b1cd7bfbfdae1acd82002f9f9bd3aefd6674e854374"
-      },
-      "stake_credential": {
-        "VerificationKey": "e22825c4a3b4762061863efedf7f26ef610f682c5f6eab0d929f2f1f"
-      }
-    },
-    "value": {},
-    "datum": null,
-    "reference_script": null
-  }
+  "d8799fd8799fd87a9f581c88ce6373aa732bff075a55f935a2dae9c4a71acdba40fead3b3276e0ffd8799fd8799fd8799f581ca594f19ac805fa74c7d453fe96342e44b4fba9195d495a1899201466ffffffffbf40bf401a00989680ffffd87980d87a80ff",
+  "d8799fd8799fd8799f581c7da8f9174254e9fc4b884d9a65e0e9daf9a942a1c8db0a3027bf3155ffd8799fd8799fd8799f581ca594f19ac805fa74c7d453fe96342e44b4fba9195d495a1899201466ffffffffbf40bf401b000000a28e957f26ff581cd441227553a0f1a965fee7d60a0f724b368dd1bddbc208730fccebcfbf474d79546f6b656e01ffffd87980d87a80ff"
 ]

@@ -15,7 +15,8 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential, sortUTxOs, validatorToScriptHash, Validator, ScriptType} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType, Output} from "./datatypes/index.ts";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType , Output as OutputType, OutputList} from "./datatypes/index.ts";
+
 import { getInput } from "./utils.ts";
 
 /*
@@ -176,25 +177,44 @@ export class CustomTransactionIdBuilder {
     withOutputs(outputs: any[]) {
         // console.log(`Outputs --> `, outputs)
         const formated : any[] = outputs.map((output: any) => {
+        // const encoded : any[] = outputs.map((output: any) => {
             assert(1 === Object.keys(output).length, "Should only be one key on outputs root object")
             const a = output[Object.keys(output)[0]];
-            // console.log("a is ", a)
+            console.log("a is ", a)
 
             const addressDetails = getAddressDetails(a.address)
             console.log(addressDetails)
             const processCredential = (credential: any ) => {
                 if ("Key" === credential.type){
                     return {
-                        VerificationKey: credential.hash
+                        VerificationKey: [credential.hash as string] as [string]
                     }
                 }
                 return {
-                    Script: credential.hash 
+                    Script: [credential.hash as string] as [string]
+                } 
+            }
+            const processStakeCredential = (credential: any) => {
+                if ("Key" === credential.type){
+                    return {
+                        Inline: [
+                            {
+                                VerificationKey: [credential.hash as string] as [string]
+                            }
+                        ] as [{ VerificationKey: [string]; } | { Script: [string]; }]
+                    }
                 }
+                return {
+                    Inline: [
+                        {
+                            Script: [credential.hash as string] as [string]
+                        }
+                    ] as [{ VerificationKey: [string]; } | { Script: [string]; }]
+                } 
             }
             const address = {
                 payment_credential: processCredential(addressDetails.paymentCredential),
-                stake_credential: addressDetails.stakeCredential ? processCredential(addressDetails.stakeCredential) : undefined
+                stake_credential: addressDetails.stakeCredential ? processStakeCredential(addressDetails.stakeCredential) : null 
             }
 
             console.log(`STUB:withOutputs::outputs.map have address`)
@@ -203,14 +223,14 @@ export class CustomTransactionIdBuilder {
 
             // add lovelace
             const lovelace = new Map<string, bigint>()
-            lovelace.set("", a.amount.coin)
+            lovelace.set("", BigInt(a.amount.coin))
             value.set("", lovelace)
 
             console.log("STUB: have set lovelace in value")
 
             // add everything else
             for (const policyId of Object.keys(a.amount.multiasset)) {
-                console.log(`%cpolicy id of assets is ${policyId}`, "color: red")
+                // console.log(`%cpolicy id of assets is ${policyId}`, "color: red")
                 const assets = new Map<string, bigint>();
                 const tokens : any = a.amount.multiasset[policyId];
                 for (const assetName of Object.keys(tokens)) {
@@ -219,7 +239,7 @@ export class CustomTransactionIdBuilder {
                 }
 
                 console.log("assets --> ", assets)
-                console.log("assets --> ", JSON.stringify(assets, null, 2))
+                // console.log("assets --> ", JSON.stringify(assets, null, 2))
 
                 value.set(policyId, assets);
             }
@@ -256,19 +276,22 @@ export class CustomTransactionIdBuilder {
                 address, 
                 value,
                 // datum,
-                datum: {NoDatum: "NoDatum"},
-                reference_script,
+                datum: {NoDatum: "NoDatum" as "NoDatum"},
+                // reference_script,
+                reference_script: null
             }
 
-            const encodedOutput = Data.to<Output>(wholeOutput, Output)
-
-            return encodedOutput
+            // const encodedOutput = Data.to<OutputType>(wholeOutput, OutputType)
+            // console.log(`Encoded output is ${encodedOutput}`)
+            // return encodedOutput
+            return wholeOutput
         })
 
+        const encoded = Data.to<OutputList>(formated, OutputList)
+        console.log(`Encoded outputs: ${encoded}`)
         // TODO: process outputs before adding them to the builder
-        Deno.writeTextFileSync("outputs.json", JSON.stringify(formated, null, 2))
-        console.log("STUB: saved dummy tx")
-        this.outputs = new Uint8Array()
+        // this.outputs = new Uint8Array()
+        this.outputs = fromHex(encoded)
         return this
     }
 
@@ -385,8 +408,8 @@ export class CustomTransactionIdBuilder {
         assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
         assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
         assertExists(this.withdrawals, "Withdrawals must be defined in the build step")
-        // assertExists(this.votes, "Votes must be defined in the build step")
         assertExists(this.inputs, "Inputs must be defined in the build step")
+        assertExists(this.outputs, "Outputs must exist when building")
 
         const components : Uint8Array[] = [
             this.mint, 
@@ -395,8 +418,8 @@ export class CustomTransactionIdBuilder {
             this.reference_inputs,
             this.extra_signatories,
             this.withdrawals,
-            // this.votes,
             this.inputs,
+            this.outputs,
         ]
 
         const combinedLengthUpTo = (n: number) => components.slice(0, n).reduce((acc : number, el: Uint8Array) => acc + el.length, 0 )

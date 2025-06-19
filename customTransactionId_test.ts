@@ -30,7 +30,11 @@ import { SpendAction } from "./mirror-types.ts";
 import { toHex } from "npm:@blaze-cardano/core";
 
 const alice = generateEmulatorAccount({
-  lovelace: 700_000_000_000n, // 500 + 100 ada
+  lovelace: 700_000_000_000n, 
+});
+
+const charlie = generateEmulatorAccount({
+  lovelace: 0n, 
 });
 
 const emulator = new Emulator([alice]);
@@ -223,10 +227,12 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .validTo(validTo)
         .readFrom([referenceInput])
         .withdraw(stakeAddress, withdrawAmount)
-        .pay.ToAddressWithData(scriptAddress, {
-            kind: "inline",
-            value: Data.to(fromText("this is a test")),
-        }, {lovelace: 10_000_000n}, validator )
+        // .pay.ToAddressWithData(scriptAddress, {
+        //     kind: "inline",
+        //     value: Data.to(fromText("this is a test")),
+        // }, {lovelace: 10_000_000n}, validator )
+
+        .pay.ToAddress(charlie.address, {lovelace: 10_000_000n})
         // .register.DRep(stakeAddress)
         .complete();
 
@@ -275,6 +281,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .readFrom([referenceInput])
         // .register.DRep(stakeAddress)
         .withdraw(stakeAddress, withdrawAmount)
+        .pay.ToAddress(charlie.address, {lovelace: 10_000_000n})
         .complete()
 
     // lucid.overrideUTxOs(walletUtxos)

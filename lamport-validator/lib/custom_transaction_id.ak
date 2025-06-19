@@ -191,9 +191,18 @@ fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certif
 }
 
 fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
+  let outputs_bytes = builtin.serialise_data(outputs)
+  // let outputs_bytes = outputs
+  //   |> list.reduce(#[], fn (acc, output) -> ByteArray {
+  //     let bytes = builtin.serialise_data(output)
+  //     bytearray.concat(acc, bytes)
+  //   })
+
+  trace @"encoded outputs: ": outputs_bytes
   CustomTransactionIdBuilder {
     ..self,
-    outputs: Some(builtin.serialise_data(outputs))
+    // outputs: Some(builtin.serialise_data(outputs))
+    outputs: Some(outputs_bytes)
   }
 }
 
