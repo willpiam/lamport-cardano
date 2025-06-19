@@ -178,7 +178,7 @@ export class CustomTransactionIdBuilder {
         const formated : any[] = outputs.map((output: any) => {
             assert(1 === Object.keys(output).length, "Should only be one key on outputs root object")
             const a = output[Object.keys(output)[0]];
-            console.log("a is ", a)
+            // console.log("a is ", a)
 
             const addressDetails = getAddressDetails(a.address)
             console.log(addressDetails)
