@@ -196,7 +196,7 @@ fn process_output(output: Output) -> ByteArray {
   let datum = builtin.serialise_data(output.datum)
   let reference_script = builtin.serialise_data(output.reference_script)
   address
-    // |> bytearray.concat(value)
+    |> bytearray.concat(value)
     // |> bytearray.concat(datum)
     // |> bytearray.concat(reference_script)
 }

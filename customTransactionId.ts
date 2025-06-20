@@ -273,11 +273,11 @@ export class CustomTransactionIdBuilder {
             })()
 
             const addressBytes = Data.to(address, Address)
-            // const valueBytes = Data.to(value, Value)
+            const valueBytes = Data.to(value, Value)
             // const datumBytes = Data.to(datum, Datum)
             // const referenceScriptBytes = Data.to(reference_script, ScriptHash)
            
-            const bytes = addressBytes
+            const bytes = addressBytes + valueBytes
 
             return bytes
             // const wholeOutput = {
