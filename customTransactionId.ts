@@ -176,8 +176,8 @@ export class CustomTransactionIdBuilder {
     */
     withOutputs(outputs: any[]) {
         // console.log(`Outputs --> `, outputs)
-        const formated : any[] = outputs.map((output: any) => {
-        // const encoded : any[] = outputs.map((output: any) => {
+        // const formated : any[] = outputs.map((output: any) => {
+        const encoded : any = outputs.map((output: any) => {
             assert(1 === Object.keys(output).length, "Should only be one key on outputs root object")
             const a = output[Object.keys(output)[0]];
             console.log("a is ", a)
@@ -281,16 +281,26 @@ export class CustomTransactionIdBuilder {
                 reference_script: null
             }
 
-            // const encodedOutput = Data.to<OutputType>(wholeOutput, OutputType)
+            const encodedOutput = Data.to<OutputType>(wholeOutput, OutputType)
             // console.log(`Encoded output is ${encodedOutput}`)
-            // return encodedOutput
-            return wholeOutput
+            return encodedOutput
+            // return wholeOutput
         })
+        // .reduce((acc : Uint8Array, curr : string) => {
+        //     const element = fromHex(curr)
+        //     const bytes = new Uint8Array(acc.length + element.length)
+        //     bytes.set(acc, 0)
+        //     bytes.set(element, acc.length)
+        //     return bytes
+        // }, new Uint8Array())
+        .reduce((acc, curr) => acc + curr, "")
 
-        const encoded = Data.to<OutputList>(formated, OutputList)
+
+        // const encoded = Data.to<OutputList>(formated, OutputList)
         console.log(`Encoded outputs: ${encoded}`)
         // TODO: process outputs before adding them to the builder
         // this.outputs = new Uint8Array()
+        // show as hex
         this.outputs = fromHex(encoded)
         return this
     }
