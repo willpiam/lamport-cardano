@@ -15,7 +15,7 @@ import {
   assert,
 } from "@std/assert";
 import { Constr, Data, getInputIndices, TxSignBuilder, UTxO, LucidEvolution, CML, getAddressDetails, Credential, sortUTxOs, validatorToScriptHash, Validator, ScriptType} from "npm:@lucid-evolution/lucid@0.4.29";
-import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType , Output as OutputType, OutputList} from "./datatypes/index.ts";
+import { Value, ValidityRange, ReferenceInputs, OutputReference, OutputReferenceList, HashBlake2b224Schema, ListExtraSignatories, Certificates, CredentialSchema, Credential as CredentialType , Output as OutputType, OutputList, Address} from "./datatypes/index.ts";
 
 import { getInput } from "./utils.ts";
 
@@ -272,18 +272,26 @@ export class CustomTransactionIdBuilder {
                 return reference_script_hash
             })()
 
-            const wholeOutput = {
-                address, 
-                value,
-                // datum,
-                datum: { NoDatum: "NoDatum" as "NoDatum" },
-                // reference_script,
-                reference_script: null
-            }
+            const addressBytes = Data.to(address, Address)
+            // const valueBytes = Data.to(value, Value)
+            // const datumBytes = Data.to(datum, Datum)
+            // const referenceScriptBytes = Data.to(reference_script, ScriptHash)
+           
+            const bytes = addressBytes
 
-            const encodedOutput = Data.to<OutputType>(wholeOutput, OutputType)
+            return bytes
+            // const wholeOutput = {
+            //     address, 
+            //     value,
+            //     // datum,
+            //     datum: { NoDatum: "NoDatum" as "NoDatum" },
+            //     // reference_script,
+            //     reference_script: null
+            // }
+
+            // const encodedOutput = Data.to<OutputType>(wholeOutput, OutputType)
             // console.log(`Encoded output is ${encodedOutput}`)
-            return encodedOutput
+            // return encodedOutput
             // return wholeOutput
         })
         // .reduce((acc : Uint8Array, curr : string) => {
