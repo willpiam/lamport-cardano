@@ -180,10 +180,10 @@ export class CustomTransactionIdBuilder {
         const encoded : any = outputs.map((output: any) => {
             assert(1 === Object.keys(output).length, "Should only be one key on outputs root object")
             const a = output[Object.keys(output)[0]];
-            console.log("a is ", a)
+            // console.log("a is ", a)
 
             const addressDetails = getAddressDetails(a.address)
-            console.log(addressDetails)
+            // console.log(addressDetails)
             const processCredential = (credential: any ) => {
                 if ("Key" === credential.type){
                     return {
@@ -217,7 +217,7 @@ export class CustomTransactionIdBuilder {
                 stake_credential: addressDetails.stakeCredential ? processStakeCredential(addressDetails.stakeCredential) : null 
             }
 
-            console.log(`STUB:withOutputs::outputs.map have address`)
+            // console.log(`STUB:withOutputs::outputs.map have address`)
 
             const value : Map<string, Map<string, bigint>> = new Map<string, Map<string, bigint>>();
 
@@ -266,14 +266,15 @@ export class CustomTransactionIdBuilder {
                     script
                 }
                 const reference_script = a?.script_reference ?? null
-                console.log("reference script ", reference_script)
-                const reference_script_hash = validatorToScriptHash(validator)
-                console.log("reference script hash ", reference_script_hash)
+                // console.log("reference script ", reference_script)
+                const reference_script_hash = validatorToScriptHash(reference_script)
+                // console.log("reference script hash ", reference_script_hash)
                 return reference_script_hash
             })()
 
             const addressBytes = Data.to(address, Address)
-            const valueBytes = Data.to(value, Value)
+            const valueBytes = Data.to(value, Value, {canonical: true})
+            console.log("value bytes ", valueBytes)
             // const datumBytes = Data.to(datum, Datum)
             // const referenceScriptBytes = Data.to(reference_script, ScriptHash)
            

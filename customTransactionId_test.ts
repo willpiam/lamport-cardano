@@ -208,13 +208,17 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     const withdrawAmount = await getRewards()
 
     const scriptUtxos = await lucid.utxosAt(scriptAddress)
-    console.log(`${scriptUtxos.length} utxos in the validator`)
     assert(scriptUtxos.length === 1, "expected 1 utxo in the validator")
 
     // const walletUtxos = await lucid.utxosAt(await lucid.wallet().address())
     // const config = lucid.config()
     // console.log(`config ---> `, Object.keys(config))
     // console.log(`txbuilderconfig ---> `, config.txbuilderconfig)
+
+    // need to rething this dummyTx approch
+    // when I try to recreate it as the real tx I end up with outputs I hadn't accounted for
+    // (I think), or it could be that the ada included in some of the outputs to cover the 
+    // minUtxo value is being recalculated. 
 
     const dummyTx = await lucid
     // const partialTx = lucid
@@ -237,7 +241,11 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .complete();
 
     // const dummyTx = await partialTx.complete()
-
+    console.log("STUB::::::::::::::;: number of dummy tx outputs", (dummyTx.toJSON() as any).body.outputs.length);
+    // show how many lovelace are in each output
+    (dummyTx.toJSON() as any).body.outputs.forEach((output: any) => {
+        console.log("STUB::::::::::::::;: lovelace in output", output.AlonzoFormatTxOut.amount.coin)
+    })
     const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid, [], scriptUtxos)
     console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
     // save dummy tx to dummytx.json
@@ -283,6 +291,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         .withdraw(stakeAddress, withdrawAmount)
         .pay.ToAddress(charlie.address, {lovelace: 10_000_000n})
         .complete()
+
 
     // lucid.overrideUTxOs(walletUtxos)
 

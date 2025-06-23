@@ -193,6 +193,7 @@ fn with_certificates(self: CustomTransactionIdBuilder, certificates: List<Certif
 fn process_output(output: Output) -> ByteArray {
   let address = builtin.serialise_data(output.address)
   let value = builtin.serialise_data(output.value)
+  trace @"value: ": value
   let datum = builtin.serialise_data(output.datum)
   let reference_script = builtin.serialise_data(output.reference_script)
   address
@@ -203,14 +204,16 @@ fn process_output(output: Output) -> ByteArray {
 
 fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> CustomTransactionIdBuilder {
   // let outputs_bytes = builtin.serialise_data(outputs)
+  trace @"number of outputs": list.length(outputs)
   let outputs_bytes = outputs
     |> list.reduce(#[], fn (acc, output) -> ByteArray {
       // let bytes = builtin.serialise_data(output)
+      trace @"lovelace on output": assets.lovelace_of(output.value)
       let bytes = process_output(output)
       bytearray.concat(acc, bytes)
     })
 
-  trace @"encoded outputs: ": outputs_bytes
+  // trace @"encoded outputs: ": outputs_bytes
   CustomTransactionIdBuilder {
     ..self,
     // outputs: Some(builtin.serialise_data(outputs))

@@ -1,0 +1,12 @@
+TS2345 [ERROR]: Argument of type '{ address: { payment_credential: { Inline: { VerificationKey: any; }[]; } | { Inline: { Script: any; }[]; }; stake_credential: { Inline: { VerificationKey: any; }[]; } | { Inline: { Script: any; }[]; } | null; }; value: Map<...>; datum: { ...; }; reference_script: string | null; }' 
+is not assignable to parameter of type 
+'{ value: Map<string, Map<string, bigint>>; address: { payment_credential: { VerificationKey: [string]; } | { Script: [string]; }; stake_credential: { Inline: [{ VerificationKey: [...]; } | { ...; }]; } | { ...; } | null; }; datum: { ...; } | ... 1 more ... | { ...; }; reference_script: string | null; }'.
+
+  The types of 
+  'address.payment_credential' are incompatible between these types.
+    
+    Type '{ Inline: { VerificationKey: any; }[]; } | { Inline: { Script: any; }[]; }' 
+    is not assignable to type
+    '{ VerificationKey: [string]; } | { Script: [string]; }'.
+      Type '{ Inline: { VerificationKey: any; }[]; }' is not assignable to type '{ VerificationKey: [string]; } | { Script: [string]; }'.
+            const encodedOutput = Data.to<Output>(wholeOutput, Output)
