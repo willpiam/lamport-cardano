@@ -1,5 +1,7 @@
 # Lamport Proof Of Concept
 
+next step -> figure out how to build transactions using CML..can I start in lucid with the dummyTx? 
+
 ## The Problem 
 
 It is desirable to support Lamport signatures on Cardano as a minimal quantum secure account solution. 
