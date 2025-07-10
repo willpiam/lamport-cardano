@@ -194,7 +194,21 @@ NETWORK="Preview"
 - [x] add tests for "things that should fail" to `manystep_test.ts`
 - [ ] Make **sure** merkle tree implementation is rock solid 
 
+## Status
 
+Verifying a lamport signature over multiple transactions works. However the thing being signed cannot be the final transaction itself. This is the next step and it begins with creating a custom method of computing a new type of transaction id exactly the same on and off-chain. 
+
+Here is the test to demonstrating signature verification over multiple transactions:
+
+`deno test manystep_test.ts  --allow-read`
+
+The relevant smart contract can be found in `manystep.ak`
+
+I am currently building out a solution to the transaction id problem. To run those tests run:
+
+`deno test --allow-read --fail-fast --filter "Custom Transaction Id" --allow-write `
+
+This time the relevant smart contract logic can be found in `custom_transaction_id_minimal.ak` and  `custom_transaction_id.ak` 
 
 ## Related Work
 

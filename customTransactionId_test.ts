@@ -3,6 +3,7 @@ import { CustomTransactionIdBuilder, CustomTransactionId } from "./customTransac
 import {
 Anchor,
   applyParamsToScript,
+  CML,
   Constr,
   Data,
   Delegation,
@@ -220,8 +221,10 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     // (I think), or it could be that the ada included in some of the outputs to cover the 
     // minUtxo value is being recalculated. 
 
-    const dummyTx = await lucid
-    // const partialTx = lucid
+    
+
+    // const dummyTx = await lucid
+    const partialTx = lucid
         .newTx()
         .mintAssets({
             [simplePolicyId + fromText("MyToken")]: 1n,
@@ -238,9 +241,24 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
 
         .pay.ToAddress(charlie.address, {lovelace: 10_000_000n})
         // .register.DRep(stakeAddress)
-        .complete();
+        // .complete();
 
-    // const dummyTx = await partialTx.complete()
+    { /// CAN WE USE THIS AS A BASE AND HANDLE THE REST IN THE CML? 
+
+        const builderConfig = lucid.config().txbuilderconfig;
+        assertExists(builderConfig, "builder config must be defined")
+        const mintAssets = CML.MapAssetNameToNonZeroInt64.new()
+        const cmlMint : CML.MintBuilderResult = CML.SingleMintBuilder.new(mintAssets)
+        const altApproch = CML.TransactionBuilder
+            .new(builderConfig)
+            .add_mint(cmlMint)
+
+
+    }
+
+
+
+    const dummyTx = await partialTx.complete()
     console.log("STUB::::::::::::::;: number of dummy tx outputs", (dummyTx.toJSON() as any).body.outputs.length);
     // show how many lovelace are in each output
     (dummyTx.toJSON() as any).body.outputs.forEach((output: any) => {
