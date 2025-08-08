@@ -10,7 +10,7 @@ The Cardano blockchain has a tight restiriction on the transaction size and numb
 
 There is an additional issue which is that the lampoert signature itself counts toward the transaction hash because it cannot be stored in the witness set and is instead placed inside the redeemer. I refer to this as *the circular-hash-dependency problem*. 
 
-The first two parts of this proof-of-concept circumvent the transaction size limit in different ways. The first part simply truncates the lamport key sizes to a value that will fit. This has the obvious disadvantage of reduced security. The second part verifies a signature over many transactions. This enables 256 bit security but sacrafices usability and incurs greater transaction fees. The final part of this proof-of-concept addresses *the circular-hash-dependency problem*. This is acomplished by building and signing a custom representation of the transaction.  
+The first two parts of this proof-of-concept circumvent the transaction size limit in different ways. The first part simply truncates the lamport key sizes to a value that will fit. This has the obvious disadvantage of reduced security. The second part verifies a signature over many transactions. This enables 256 bit security but sacrafices usability and incurs greater transaction fees. The final part of this proof-of-concept addresses *the circular-hash-dependency problem* (not yet complete). This is acomplished by building and signing a custom representation of the transaction.  
 
 1. As of __date__ the transaction size limit is __ and the maximum number of steps is __. 
 
