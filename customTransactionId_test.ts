@@ -243,18 +243,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
         // .register.DRep(stakeAddress)
         // .complete();
 
-    { /// CAN WE USE THIS AS A BASE AND HANDLE THE REST IN THE CML? 
-
-        const builderConfig = lucid.config().txbuilderconfig;
-        assertExists(builderConfig, "builder config must be defined")
-        const mintAssets = CML.MapAssetNameToNonZeroInt64.new()
-        const cmlMint : CML.MintBuilderResult = CML.SingleMintBuilder.new(mintAssets)
-        const altApproch = CML.TransactionBuilder
-            .new(builderConfig)
-            .add_mint(cmlMint)
-
-
-    }
+    // Removed experimental CML TransactionBuilder block that caused type errors
 
 
 
@@ -264,26 +253,7 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     (dummyTx.toJSON() as any).body.outputs.forEach((output: any) => {
         console.log("STUB::::::::::::::;: lovelace in output", output.AlonzoFormatTxOut.amount.coin)
     })
-    const message = await CustomTransactionIdBuilder.customTransactionId(dummyTx, lucid, [], scriptUtxos)
-    console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
-    // save dummy tx to dummytx.json
-    Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
-    console.log("STUB: saved dummy tx")
-
-    // const preselectedUtxos : UTxO[] = await Promise.all(
-    //     (dummyTx.toJSON() as any).body.inputs
-    //         .map(async (input: any) : Promise<UTxO> => {
-    //             await lucid.utxosByOutRef()
-    //             // return {
-    //             //     txHash: input.transaction_id,
-    //             //     outputIndex: input.index,
-    //             //     address: , 
-    //             //     assets: , 
-    //             //     datumHash: , 
-    //             //     datum: , 
-    //             //     scriptRef: ,
-    //             // }
-    //         }));
+    // Build a proto tx that already includes the script input with a placeholder redeemer
     const preselectedUtxos = await lucid.utxosByOutRef(
         (dummyTx.toJSON() as any).body.inputs
             .map((input : {transaction_id: string, index: number}) => ({
@@ -291,6 +261,29 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
                 outputIndex: input.index,
             })))
     console.log(`STUB: have ${preselectedUtxos.length} preselected utxos`)
+    const placeholderMessage = new Uint8Array(32)
+    const protoTx = await lucid.newTx()
+        .collectFrom(preselectedUtxos)
+        .collectFrom(scriptUtxos, SpendAction.VerifyFullSignature(placeholderMessage))
+        .attach.SpendingValidator(validator)
+        .mintAssets({
+            [simplePolicyId + fromText("MyToken")]: 1n,
+        })
+        .attach.MintingPolicy(simpleMintingPolicy)
+        .validFrom(validFrom)
+        .validTo(validTo)
+        .readFrom([referenceInput])
+        .withdraw(stakeAddress, withdrawAmount)
+        .pay.ToAddress(charlie.address, {lovelace: 10_000_000n})
+        .complete()
+    // compute the message over the proto transaction, which should have matching inputs/outputs/fees
+    const message = await CustomTransactionIdBuilder.customTransactionId(protoTx, lucid)
+    console.log(`%cmessage  ${toHex(message)}`, "color: hotpink")
+    // save dummy tx to dummytx.json
+    Deno.writeTextFileSync("dummytx.json", JSON.stringify(dummyTx.toJSON(), null, 2))
+    console.log("STUB: saved dummy tx")
+
+    // preselectedUtxos computed above
     // console.log(`preselected utxos: `, preselectedUtxos)
 
 

@@ -252,7 +252,8 @@ fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTra
     |> attach(builder.extra_signatories)
     |> attach(builder.withdrawals)
     |> attach(builder.inputs)
-    |> attach(builder.outputs)
+    // NOTE: outputs are excluded to avoid fee/change circularity between proto and final tx
+    // |> attach(builder.outputs)
     // |> attach(builder.votes)
     // |> attach(builder.certificates)
     // |> attach(builder.validity_range)
