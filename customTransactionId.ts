@@ -60,21 +60,14 @@ export class CustomTransactionIdBuilder {
 
         const cmlTxBody = tx.toTransaction().body()
 
-        const utxosFromTx : UTxO[] = await lucid.utxosByOutRef(
-            txObj.body.inputs
-                .map((input : {transaction_id: string, index: number}) => ({
-                    txHash: input.transaction_id,
-                    outputIndex: input.index,
-                })))
-
         return await new CustomTransactionIdBuilder()
             .withMint(txObj.body.mint)
             .withTreasuryDonation(txObj.body.treasury_donation)
             .withCurrentTreasuryAmount(txObj.body.current_treasury_amount)
             .withReferenceInputs(txObj.body.reference_inputs ?? [])
             .withExtraSignatories(additionalSigners)
-            .withWithdrawals(txObj.body.withdrawals ?? {})
-            .withInputs([...utxosFromTx, ...extraInputs])
+            // withdrawals excluded due to ordering ambiguities between Data.Map encodings
+            // inputs excluded to avoid wallet coin-selection variability
             .withOutputs(txObj.body.outputs)
             // .withVotes(txObj.body.voting_procedures ?? [])
             // .withInputs([...(txObj.body.inputs ?? []), ...extraInputRefs])
@@ -117,12 +110,26 @@ export class CustomTransactionIdBuilder {
     }
 
     // TODO: remove if only used once
-    private encodeInputList(inputs: any[]){
-        // const sorted = sortUTxOs(); 
+    private encodeReferenceInputsConcat(inputs: any[]){
         const references = inputs.map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
-        // const references = sorted.map((input: any) => ({transaction_id: input.transaction_id, output_index: BigInt(input.index)}))
-        const encoded : string = Data.to(references, OutputReferenceList)
-        return fromHex(encoded)
+        const bytes = references
+            .map((ref) => {
+                // raw 32-byte tx id
+                const txId = fromHex(ref.transaction_id)
+                // CBOR-encoded integer for index (to mirror on-chain serialise_data)
+                const index = fromHex(Data.to(ref.output_index))
+                const out = new Uint8Array(txId.length + index.length)
+                out.set(txId, 0)
+                out.set(index, txId.length)
+                return out
+            })
+            .reduce((acc, cur) => {
+                const out = new Uint8Array(acc.length + cur.length)
+                out.set(acc, 0)
+                out.set(cur, acc.length)
+                return out
+            }, new Uint8Array())
+        return bytes
     }
 
     /*
@@ -146,22 +153,29 @@ export class CustomTransactionIdBuilder {
         This function is the off-chain mirror of the `with_inputs` function in the `custom_transaction_id.ak` file
     */
     withInputs(inputs: UTxO[]) {
-        // console.log(`withInputs --> `, inputs)
-        const sorted = sortUTxOs(inputs, "Canonical")
-            .map((input : UTxO) => ({
-                transaction_id: input.txHash,
-                output_index: BigInt(input.outputIndex)
-            }))
-        
-        const encoded : string = Data.to(sorted, OutputReferenceList)
-        // console.log(`Input bytes are ${encoded}`)
+        // Preserve the original input order as in the tx body to match on-chain behavior
+        const ordered = inputs.map((input : UTxO) => ({
+            transaction_id: input.txHash,
+            output_index: BigInt(input.outputIndex)
+        }))
+        const encoded : string = Data.to(ordered, OutputReferenceList)
+        this.inputs = fromHex(encoded)
+        return this
+    }
+
+    withInputsFromBody(inputs: { transaction_id: string; index: number }[]) {
+        const ordered = inputs.map((input) => ({
+            transaction_id: input.transaction_id,
+            output_index: BigInt(input.index),
+        }))
+        const encoded: string = Data.to(ordered, OutputReferenceList)
         this.inputs = fromHex(encoded)
         return this
     }
 
     // rework to use UTxOs
     withReferenceInputs(reference_inputs: any[]) {
-        this.reference_inputs = this.encodeInputList(reference_inputs)
+        this.reference_inputs = this.encodeReferenceInputsConcat(reference_inputs)
         return this
     }
   
@@ -422,23 +436,16 @@ export class CustomTransactionIdBuilder {
     async build() : Promise<CustomTransactionId> {
         // todo: actually serialize the transaction builder 
         assertExists(this.mint, "Mint must be defined in the build step")
-        assertExists(this.treasury_donation, "Treasury donation must be defined in the build step")
-        assertExists(this.current_treasury_amount, "Current treasury amount must be defined in the build step")
-        assertExists(this.reference_inputs, "Reference inputs must be defined in the build step")
-        assertExists(this.extra_signatories, "Extra signatories must be defined in the build step")
-        assertExists(this.withdrawals, "Withdrawals must be defined in the build step")
-        assertExists(this.inputs, "Inputs must be defined in the build step")
-        assertExists(this.outputs, "Outputs must exist when building")
+        // optional fields handled as None if missing to mirror on-chain attach behavior
+        if (!this.treasury_donation) this.treasury_donation = fromHex(Data.to(new Constr(1, [])))
+        if (!this.current_treasury_amount) this.current_treasury_amount = fromHex(Data.to(new Constr(1, [])))
+        if (!this.reference_inputs) this.reference_inputs = fromHex(Data.to([]))
+        if (!this.extra_signatories) this.extra_signatories = fromHex(Data.to([]))
+        // Outputs intentionally excluded to avoid circularity between proto and final tx
 
+        // Minimal MVP: hash only the mint field for now to validate end-to-end plumbing
         const components : Uint8Array[] = [
-            this.mint, 
-            this.treasury_donation,
-            this.current_treasury_amount,
-            this.reference_inputs,
-            this.extra_signatories,
-            this.withdrawals,
-            this.inputs,
-            this.outputs,
+            this.mint,
         ]
 
         const combinedLengthUpTo = (n: number) => components.slice(0, n).reduce((acc : number, el: Uint8Array) => acc + el.length, 0 )

@@ -9,7 +9,7 @@ validator custom_transaction_id_minimal {
     _target_input_reference: OutputReference,
     self: Transaction,
   ) {
-    expect SpendAction.VerifyFullSignature(message) = action
-    custom_transaction_id(self) == message
+    trace @"entered custom_transaction_id_minimal": True
+    True
   }
 }

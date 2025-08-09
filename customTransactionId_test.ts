@@ -312,6 +312,11 @@ Deno.test("Custom Transaction Id - spend from custom_transaction_id_minimal", as
     //     .complete()
     
     console.log("%cpassed complete ", "color: hotpink")
+    const txJson: any = tx.toJSON()
+    console.log("redeemers:", JSON.stringify(txJson.witness_set?.redeemers, null, 2))
+    console.log("script_inputs:", JSON.stringify(txJson.body.inputs, null, 2))
+    const messageOnFinal = await CustomTransactionIdBuilder.customTransactionId(tx, lucid)
+    console.log(`%cmessageOnFinal  ${toHex(messageOnFinal)}`, "color: turquoise")
 
     console.log("%chave real transaction", "color: yellow")
     assert((tx.toJSON() as any).body.mint.toString() === (dummyTx.toJSON() as any).body.mint.toString(), "mint must be the same on dummy and real transactions")

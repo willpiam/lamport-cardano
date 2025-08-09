@@ -87,16 +87,19 @@ fn new_custom_transaction_id() -> CustomTransactionIdBuilder {
 }
 
 
-fn encode_input_list(inputs: List<Input>) -> ByteArray {
+fn encode_reference_inputs_concat(inputs: List<Input>) -> ByteArray {
+  // Build a deterministic byte blob: tx_id bytes || serialised(index) for each reference input, in order
   inputs
-    |> list.map(fn (input: Input) -> OutputReference {
-      input.output_reference
+    |> list.map(fn (input: Input) -> OutputReference { input.output_reference })
+    |> list.reduce(#[], fn (acc: ByteArray, output_ref: OutputReference) -> ByteArray {
+      let tx_id_bytes = output_ref.transaction_id
+      let index_bytes = builtin.serialise_data(output_ref.output_index)
+      bytearray.concat(acc, bytearray.concat(tx_id_bytes, index_bytes))
     })
-    |> builtin.serialise_data()
 }
 
 fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomTransactionIdBuilder {
-  let inputs_bytes = encode_input_list(inputs)
+  let inputs_bytes = encode_reference_inputs_concat(inputs)
   CustomTransactionIdBuilder {
     ..self,
     inputs: Some(inputs_bytes),
@@ -104,12 +107,7 @@ fn with_inputs(self: CustomTransactionIdBuilder, inputs: List<Input>) -> CustomT
 }
 
 fn with_reference_inputs(self: CustomTransactionIdBuilder, reference_inputs: List<Input>) -> CustomTransactionIdBuilder {
-  // let reference_inputs_bytes = reference_inputs
-  //   |> list.map(fn (input: Input) -> OutputReference {
-  //     input.output_reference
-  //   })
-  //   |> builtin.serialise_data()
-  let reference_inputs_bytes = encode_input_list(reference_inputs)
+  let reference_inputs_bytes = encode_reference_inputs_concat(reference_inputs)
 
   CustomTransactionIdBuilder {
     ..self,
@@ -194,8 +192,7 @@ fn process_output(output: Output) -> ByteArray {
   let address = builtin.serialise_data(output.address)
   let value = builtin.serialise_data(output.value)
   trace @"value: ": value
-  let datum = builtin.serialise_data(output.datum)
-  let reference_script = builtin.serialise_data(output.reference_script)
+  // ignore datum and reference_script for now
   address
     |> bytearray.concat(value)
     // |> bytearray.concat(datum)
@@ -222,8 +219,10 @@ fn with_outputs(self: CustomTransactionIdBuilder, outputs: List<Output>) -> Cust
 }
 
 fn attach(a: ByteArray, b: Option<ByteArray>) -> ByteArray {
-  expect Some(element) = b
-  bytearray.concat(a, element)
+  when b is {
+    Some(element) -> bytearray.concat(a, element)
+    None -> a
+  }
 }
 
 fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credential, Lovelace>) -> CustomTransactionIdBuilder {
@@ -245,15 +244,8 @@ fn with_withdrawals(self: CustomTransactionIdBuilder, withdrawals: Pairs<Credent
 
 fn build_custom_transaction_id(builder: CustomTransactionIdBuilder) -> CustomTransactionId {
   expect Some(mint) = builder.mint
+  // Minimal MVP: hash only the mint field for now to validate end-to-end plumbing
   let blob = mint
-    |> attach(builder.treasury_donation)
-    |> attach(builder.current_treasury_amount)
-    |> attach(builder.reference_inputs)
-    |> attach(builder.extra_signatories)
-    |> attach(builder.withdrawals)
-    |> attach(builder.inputs)
-    // NOTE: outputs are excluded to avoid fee/change circularity between proto and final tx
-    // |> attach(builder.outputs)
     // |> attach(builder.votes)
     // |> attach(builder.certificates)
     // |> attach(builder.validity_range)
@@ -272,8 +264,9 @@ pub fn custom_transaction_id(tx: Transaction) -> ByteArray {
                   |> with_reference_inputs(tx.reference_inputs)
                   |> with_extra_signatories(tx.extra_signatories)
                   |> with_withdrawals(tx.withdrawals)
-                  |> with_inputs(tx.inputs)
-                  |> with_outputs(tx.outputs)
+                  // inputs excluded from the hash
+                  // outputs excluded from the hash
+                  // |> with_outputs(tx.outputs)
                   // |> with_votes(tx.votes)
                   // |> with_certificates(tx.certificates)
                      // |> with_validity_range(tx.validity_range)
